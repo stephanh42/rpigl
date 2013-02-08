@@ -440,6 +440,10 @@ class EventHandler:
 class GameWindow(EventHandler):
     done = False
     clear_flags = gles2.GL_COLOR_BUFFER_BIT|gles2.GL_DEPTH_BUFFER_BIT
+
+    clock = pygame.time.Clock()
+    framerate = 0
+    on_frame_called = True
     
     def __init__(self, width, height, flags=0):
         window = create_opengl_window(width, height, flags)
@@ -480,13 +484,32 @@ class GameWindow(EventHandler):
         if event.key == pygame.K_ESCAPE:
             self.done = True
 
+    def on_frame(self, time):
+        self.redraw()
+
+    def do_one_event(self):
+        framerate = self.framerate
+        if framerate > 0:
+            event = pygame.event.poll()
+            if event.type != pygame.NOEVENT:
+                self.on_event(event)
+            elif self.on_frame_called:
+                self.clock.tick(framerate)
+                self.on_frame_called = False
+            else:
+                self.on_frame(self.clock.get_time())
+                self.on_frame_called = True
+        else:
+            self.on_event(pygame.event.wait())
+
+
     def run(self):
         pygame.init()
         self.done = False
         try:
             self.redraw()
+            self.clock.tick()
             while not self.done:
-                event = pygame.event.wait()
-                self.on_event(event)
+                self.do_one_event()
         finally:
             pygame.quit()

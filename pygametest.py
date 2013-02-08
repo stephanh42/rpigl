@@ -33,6 +33,8 @@ void main(void) {
 array_spec = glesutils.ArraySpec("vertex_attrib:2h color_attrib:3Bn")
 
 class MyWindow(glesutils.GameWindow):
+    framerate = 20
+    angle = 0
 
     def init(self):
         """All setup which requires the OpenGL context to be active."""
@@ -50,7 +52,8 @@ class MyWindow(glesutils.GameWindow):
 
         # load uniforms and enable attributes
         # note: the program must be use()-d for this to work
-        program.uniform.mvp_mat.load(transforms.rotation_degrees(45, "z"))
+        self.mvp_mat = program.uniform.mvp_mat
+        self.mvp_mat.load(transforms.rotation_degrees(self.angle, "z"))
         program.attrib.vertex_attrib.enable()
         program.attrib.color_attrib.enable()
    
@@ -79,8 +82,14 @@ class MyWindow(glesutils.GameWindow):
         print(glGetString(GL_VERSION))
         print(glGetString(GL_EXTENSIONS))
 
+    def on_frame(self, time):
+        self.angle = self.angle + time*0.05
+        self.redraw()
 
     def draw(self):
+        #update uniform
+        self.mvp_mat.load(transforms.rotation_degrees(self.angle, "z"))
+
         # draw triangles
         # program must be used, array and element buffer must be bound
         self.elem_vbo.draw()
