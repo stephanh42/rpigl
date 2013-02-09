@@ -394,6 +394,8 @@ def load_uniform(uniform, ar):
 
 
 class EventHandler:
+    """Base class which dispatches a Pygame event to an event handler based on event type."""
+
     callbacks = {
       pygame.QUIT: attrgetter("on_quit"),
       pygame.ACTIVEEVENT: attrgetter("on_activeevent"),
@@ -432,6 +434,7 @@ class EventHandler:
     def on_unknown_event(self, event): pass
 
     def on_event(self, event):
+        """Handle an event by dispatching to the appropriate handler."""
         callback = self.callbacks.get(event.type, self.default_callback)
         (callback(self))(event)
 

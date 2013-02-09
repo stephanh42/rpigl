@@ -1,3 +1,10 @@
+"""
+Create a window for OpenGL (ES) rendering in a platform-dependent way.
+
+The main entry point is create_opengl_window.
+"""
+
+
 import ctypes
 import ctypes.util
 import functools
@@ -195,6 +202,12 @@ class DesktopWindow(WindowsDesktopWindow):
 
 
 def create_opengl_window(width, height, flags=0):
+    """Create a window and establish an OpenGL (ES) context.
+    The width and height are merely hints, and ignored on the Pi itself since
+    there we always go fullscreen.
+
+    The flags parameter are additional pygame flags; OPENGL and DOUBLEBUF are already implied.
+    """
     if is_raspberry_pi:
         attribList = make_array(EGLint, [EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_DEPTH_SIZE, 24, EGL_NONE])
         window = rpi_create_window(2, attribList)
