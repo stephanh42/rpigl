@@ -78,9 +78,9 @@ class MyWindow(glesutils.GameWindow):
         self.elem_vbo = glesutils.ElementBuffer([0, 1, 2], type='B')
 
         # print some OpenGL implementation information
-        print(glGetString(GL_VENDOR))
-        print(glGetString(GL_VERSION))
-        print(glGetString(GL_EXTENSIONS))
+        print((glGetString(GL_VENDOR)))
+        print((glGetString(GL_VERSION)))
+        print((glGetString(GL_EXTENSIONS)))
 
     def on_frame(self, time):
         self.angle = self.angle + time*0.05

@@ -115,7 +115,7 @@ class RaspberryWindow(BaseWindow):
        height = c_uint32(0)
        status = graphics_get_display_size(DISPLAY_ID, ctypes.byref(width), ctypes.byref(height))
        if status < 0:
-           raise Exception, "cannot obtain display size"
+           raise Exception("cannot obtain display size")
        self.width = width.value
        self.height = height.value
 
@@ -141,28 +141,28 @@ class RaspberryWindow(BaseWindow):
        
        display = eglGetDisplay(EGL_DEFAULT_DISPLAY)
        if not display:
-           raise Exception, "no EGL display"
+           raise Exception("no EGL display")
 
        major_version = EGLint(0)
        minor_version = EGLint(0)
        if not eglInitialize(display, ctypes.byref(major_version), ctypes.byref(minor_version)):
-         raise Exception, "cannot initialize EGL display"
+         raise Exception("cannot initialize EGL display")
 
        config = EGLConfig()
        num_configs = EGLint(0)
        if not eglChooseConfig(display, attrib_list, ctypes.byref(config), 1, ctypes.byref(num_configs)):
-         raise Exception, "no suitable configs available on display"
+         raise Exception("no suitable configs available on display")
 
        surface = eglCreateWindowSurface(display, config, ctypes.byref(self.window), None)
        if not surface:
-         raise Exception, "cannot create window surface"
+         raise Exception("cannot create window surface")
 
        context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs)
        if not context:
-         raise Exception, "cannot create GL context"
+         raise Exception("cannot create GL context")
        
        if not eglMakeCurrent(display, surface, surface, context):
-         raise Exception, "cannot make GL context current"
+         raise Exception("cannot make GL context current")
        
        self.display = display
        self.surface = surface

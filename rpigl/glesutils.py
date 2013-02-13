@@ -4,8 +4,8 @@ Utility functions that lightly wrap some GL functionality.
 Also interaction with pygame.
 """
 
-import gles2
-from rpi_egl import create_opengl_window
+from . import gles2
+from .rpi_egl import create_opengl_window
 import ctypes
 import pygame
 import numpy
@@ -13,7 +13,7 @@ import re
 import string
 from operator import attrgetter
 from functools import partial
-from lazycall import LazyAttr
+from .lazycall import LazyAttr
 
 def _get_params(f, *args):
     params = ctypes.c_int32(0)
@@ -24,6 +24,7 @@ def _get_params(f, *args):
 def load_shader(code, shader_type):
     """Load an OpenGL shader given the GLSL source code as a string."""
     shader = gles2.glCreateShader(shader_type)
+    code = code.encode()
     gles2.glShaderSource(shader, 1, ctypes.byref(ctypes.c_char_p(code)), None);
     gles2.glCompileShader(shader)
     status = _get_params(gles2.glGetShaderiv, shader, gles2.GL_COMPILE_STATUS)
@@ -32,7 +33,7 @@ def load_shader(code, shader_type):
         log = ctypes.create_string_buffer(log_length)
         gles2.glGetShaderInfoLog(shader, log_length, None, log)
         log = log.value
-        raise gles2.GLError, "compile error : %s" % log
+        raise gles2.GLError("compile error : %s" % log)
 
     return shader
 
@@ -49,12 +50,12 @@ def create_program(*shaders):
         log = ctypes.create_string_buffer(log_length)
         gles2.glGetProgramInfoLog(shader, log_length, None, log)
         log = log.value
-        raise GLError, "link error : %s" % log
+        raise GLError("link error : %s" % log)
 
     return program
 
 
-class Shader:
+class Shader(object):
     """OpenGL shader object."""
 
     def __init__(self, code):
@@ -76,14 +77,16 @@ class FragmentShader(Shader):
     shader_type = gles2.GL_FRAGMENT_SHADER
 
 
-class Uniform:
+class Uniform(object):
     """An OpenGL uniform variable."""
+
+    __slots__ = ["program", "name", "uniform"]
 
     def __init__(self, program, name):
         """Create a uniform given a program and the name."""
         self.program = program
         self.name = name
-        self.uniform = gles2.glGetUniformLocation(program, name)
+        self.uniform = gles2.glGetUniformLocation(program, name.encode())
 
     def load(self, ar):
         """Load data into the uniform. Its program must be in use."""
@@ -94,16 +97,17 @@ class Uniform:
         return "Uniform(%d, %s)" % (self.program, repr(self.name))
 
 
-class Attrib:
+class Attrib(object):
     """An OpenGL per-vertex attribute."""
 
-    enabled = False
+    __slots__ = ["program", "name", "location", "enabled"]
 
     def __init__(self, program, name):
         """Create a attrib given a program and the name."""
         self.program = program
         self.name = name
-        self.location = gles2.glGetAttribLocation(program, name)
+        self.location = gles2.glGetAttribLocation(program, name.encode())
+        self.enabled = False
 
     def enable(self):
         """Enable the attrib. Its program must be in use."""
@@ -123,42 +127,44 @@ class Attrib:
 
 _used_program = None
 
-class Program:
-     """An OpenGL shader program."""
+class Program(object):
+    """An OpenGL shader program."""
 
-     def __init__(self, *shaders):
-         """Link shaders together into a single program."""
-         program = create_program(*[shader.shader for shader in shaders])
-         self.program = program
-         self.uniform = LazyAttr(partial(Uniform, program))
-         self.attrib = LazyAttr(partial(Attrib, program))
+    __slots__ = ["program", "uniform", "attrib"]
 
-     def use(self):
-         """Start using this program."""
-         global _used_program
-         gles2.glUseProgram(self.program)
-         _used_program = self.program
+    def __init__(self, *shaders):
+        """Link shaders together into a single program."""
+        program = create_program(*[shader.shader for shader in shaders])
+        self.program = program
+        self.uniform = LazyAttr(partial(Uniform, program))
+        self.attrib = LazyAttr(partial(Attrib, program))
 
-     def is_used(self):
-         """Check if program is currently in use."""
-         return _used_program == self.program
+    def use(self):
+        """Start using this program."""
+        global _used_program
+        gles2.glUseProgram(self.program)
+        _used_program = self.program
 
-     def delete(self):
-         """Delete program."""
-         gles2.glDeleteProgram(self.program)
-         self.program = 0
+    def is_used(self):
+        """Check if program is currently in use."""
+        return _used_program == self.program
 
-     def enabled_attribs(self):
-         """Return a list of all enabled attribs."""
-         return [attrib for attrib in self.attrib if attrib.enabled]
+    def delete(self):
+        """Delete program."""
+        gles2.glDeleteProgram(self.program)
+        self.program = 0
 
-     def disable_all_attribs(self):
-         """Disable all enabled attribs."""
-         for attrib in self.enabled_attribs():
-             attrib.disable()
+    def enabled_attribs(self):
+        """Return a list of all enabled attribs."""
+        return [attrib for attrib in self.attrib if attrib.enabled]
+
+    def disable_all_attribs(self):
+        """Disable all enabled attribs."""
+        for attrib in self.enabled_attribs():
+            attrib.disable()
 
 
-class AttribSpec:
+class AttribSpec(object):
     """The specification for a single attrib."""
 
     gl_types = {
@@ -193,7 +199,7 @@ class AttribSpec:
         self.spec = spec
         names,count, type, flags = self.regex.match(spec).groups()
 
-        self.names = string.split(names, ",")
+        self.names = names.split(",")
         self.count = int(count)
         if self.count != 1:
             self.allowed_shapes = frozenset([(self.count,)])
@@ -214,7 +220,7 @@ class AttribSpec:
     def prep_array(self, ar):
         ar = numpy.ascontiguousarray(ar, dtype=self.dtype)
         if ar.shape[1:] not in self.allowed_shapes:
-            raise ValueError, "Invalid array shape: %s" % ar.shape
+            raise ValueError("Invalid array shape: %s" % ar.shape)
         return ar
 
     def load_array(self, prepped_array, length, offset):
@@ -227,11 +233,13 @@ class AttribSpec:
         
 
 
-class ArraySpec:
+class ArraySpec(object):
+    """The specification for an ArrayBuffer format."""
 
     def __init__(self, spec):
+        """Create the ArraySpec from its string representation, which consists of whitespace-separated AttribSpecs."""
         self.spec = spec
-        attribs = [AttribSpec(field) for field in string.split(spec)]
+        attribs = [AttribSpec(field) for field in spec.split()]
         attribs.sort(key=attrgetter("alignment"), reverse=True)
         self.attribs = attribs
 
@@ -247,6 +255,7 @@ class ArraySpec:
         self.size = size
 
     def create_buffer(self, length):
+        """Create an ArrayBuffer of the given length."""
         return ArrayBuffer(self, length)
 
     def __repr__(self):
@@ -254,8 +263,9 @@ class ArraySpec:
 
 
 
-class BufferObject:
+class BufferObject(object):
     bound_buffers = {}
+    byte_size = 0
 
     def __init__(self, usage):
         self.usage = usage
@@ -277,6 +287,7 @@ class BufferObject:
     def buffer_data(self, size, ptr=None):
         assert self.is_bound()
         gles2.glBufferData(self.target, size, ptr, self.usage)
+        self.byte_size = size
 
     def __len__(self):
         return self.length
@@ -288,7 +299,9 @@ class BufferObject:
         return SlicedBuffer(self, start, stop)
 
 
-class SlicedBuffer:
+class SlicedBuffer(object):
+    __slots__ = ["buffer_object", "start", "stop"]
+
     def __init__(self, buffer_object, start, stop):
         self.buffer_object = buffer_object
         self.start = start
@@ -393,7 +406,7 @@ def load_uniform(uniform, ar):
     loader(uniform, ptr)
 
 
-class EventHandler:
+class EventHandler(object):
     """Base class which dispatches a Pygame event to an event handler based on event type."""
 
     callbacks = {

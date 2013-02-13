@@ -88,7 +88,7 @@ def make_pointer(ctype):
 
 
 def remove_comment(line):
-    n = string.find(line, "#")
+    n = line.find("#")
     if n>= 0:
         return line[:n]
     else:
@@ -104,7 +104,7 @@ def parse_enums(f):
         mo = re_enum.match(line)
         if mo is not None:
             name, value = mo.groups()
-            ext = string.split(name, '_')[-1]
+            ext = name.split('_')[-1]
             if ext not in extensions:
                 enums.append((name, value))
     return enums
@@ -145,7 +145,7 @@ class GLFunction:
         self.argtypes = {}
 
     def __str__(self):
-        result = self.retval + " " + self.name + "(" + string.join([str(self.argtypes.get(a, "???")) + " " + a for a in self.args], ", ") + ")"
+        result = self.retval + " " + self.name + "(" + ", ".join([str(self.argtypes.get(a, "???")) + " " + a for a in self.args]) + ")"
         if not self.valid:
             result = "# "  + result
         return result
@@ -156,8 +156,8 @@ class GLFunction:
             retval = "None"
         else:
             retval = "ctypes." + retval
-        f.write("%s = load_gl_proc(\"%s\", %s, (%s))\n" % (self.name, self.name, retval,
-             string.join(["ctypes.%s," % self.argtypes[a] for a in self.args], " ")))
+        f.write("%s = load_gl_proc(b\"%s\", %s, (%s))\n" % (self.name, self.name, retval,
+             " ".join(["ctypes.%s," % self.argtypes[a] for a in self.args])))
 
 
 def parse_gl_spec(gl_spec):
@@ -169,14 +169,14 @@ def parse_gl_spec(gl_spec):
         mo = re_header.match(line)
         if mo is not None:
             name = "gl" + mo.group(1)
-            args = map(string.strip, string.split(mo.group(2), ","))
+            args = [s.strip() for s in mo.group(2).split(",")]
             args = [arg for arg in args if arg]
             current_function = GLFunction(name, args)
             functions.append(current_function)
             continue
         if current_function is None:
             continue
-        line = string.split(line)
+        line = line.split()
         if len(line) == 0:
             continue
         if line[0] == "return":
@@ -211,7 +211,7 @@ outfile = open("rpigl/gles2.py", "w")
 
 gles2_header = """
 import ctypes
-from load_gles import load_gl_proc, GLError
+from .load_gles import load_gl_proc, GLError
 
 """
 

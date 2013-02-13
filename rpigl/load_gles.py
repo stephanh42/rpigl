@@ -7,10 +7,10 @@ import ctypes
 import ctypes.util
 import functools
 import platform
-from lazycall import lazycall, lazycallable
+from .lazycall import lazycall, lazycallable
 
 
-class GLError(StandardError):
+class GLError(Exception):
     """An OpenGL error condition."""
     pass
 
@@ -32,7 +32,7 @@ def load_with_fallback(loader, lib, name):
 def raw_load_gl_proc():
     system = platform.system()
     if system == "Linux":
-        import rpi_egl
+        from . import rpi_egl
         if rpi_egl.is_raspberry_pi:
             gl_library = rpi_egl.gles_lib
             return lambda name: (name, gl_library)
@@ -44,7 +44,7 @@ def raw_load_gl_proc():
         loader = (GLFUNCTYPE(ctypes.c_void_p, ctypes.c_char_p))(("wglGetProcAddress", gl_library))
         return functools.partial(load_with_fallback, loader, gl_library)
     else:
-        raise GLError, "Do not know how to load OpenGL library on platform %s" % system
+        raise GLError("Do not know how to load OpenGL library on platform %s" % system)
 
 
 def check_gl_error(name, result, func, args):
@@ -64,17 +64,17 @@ def check_gl_error(name, result, func, args):
     else:
         msg = "%d" % err
     import string
-    raise GLError, "OpenGL error in %s(%s): %s" % (name, string.join([str(a) for a in args], ", "), msg)
+    raise GLError("OpenGL error in %s(%s): %s" % (name, string.join([str(a) for a in args], ", "), msg))
 
 
 @lazycallable
 def load_gl_proc(name, restype, argtypes):
     raw_proc = raw_load_gl_proc(name)
     if raw_proc is None:
-        raise GLError, "OpenGL procedure not available: %s" % name
+        raise GLError("OpenGL procedure not available: %s" % name)
     prototype = GLFUNCTYPE(restype, *argtypes)
     proc = prototype(raw_proc)
-    if name != "glGetError":
+    if name != b"glGetError":
         proc.errcheck = functools.partial(check_gl_error, name)
     return proc
 
@@ -88,4 +88,4 @@ GL_STACK_OVERFLOW = 0x0503
 GL_STACK_UNDERFLOW = 0x0504
 GL_OUT_OF_MEMORY = 0x0505
 
-glGetError = load_gl_proc("glGetError", ctypes.c_uint, ())
+glGetError = load_gl_proc(b"glGetError", ctypes.c_uint, ())

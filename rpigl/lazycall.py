@@ -6,7 +6,7 @@ call to a function.
 
 import functools
 
-class lazycall:
+class lazycall(object):
     """Wrap a callable which returns itself callables,
     so that it is executed lazily, i.e. the wrapped callable
     is only called (once) on the first call to the returned callable.
@@ -14,15 +14,21 @@ class lazycall:
     From a user point of view it is as if callable is called with args, except that
     any side effects are only visible upon the first call the the result.
     """
+    
+    __slots__ = ["callable", "args", "f"]
+
     def __init__(self, callable, *args):
          self.callable = callable
          self.args = args
+         self.f = None
 
     def __call__(self, *args2):
-        f = self.callable(*self.args)
-        self.__call__ = f
-        del self.callable
-        del self.args
+        f = self.f
+        if f is None:
+            f = self.callable(*self.args)
+            self.f = f
+            del self.callable
+            del self.args
         return f(*args2)
 
 
@@ -30,7 +36,7 @@ def lazycallable(wrapped):
     return functools.partial(lazycall, wrapped)
 
 
-class LazyAttr:
+class LazyAttr(object):
     """Objects of this class create attributes automatically on first access.
     """
     def __init__(self, callable):
