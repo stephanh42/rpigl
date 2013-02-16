@@ -9,7 +9,6 @@ import ctypes
 import ctypes.util
 import functools
 from ctypes import c_int, c_uint, c_int32, c_uint32, c_int16, c_uint16, c_void_p, POINTER
-import pygame
 
 # types
 
@@ -53,6 +52,7 @@ EGL_DEPTH_SIZE = 0x3025
 EGL_NONE = 0x3038
 EGL_DEFAULT_DISPLAY = None
 EGL_NO_CONTEXT = None
+EGL_NO_SURFACE = None
 
 # functions
 
@@ -94,6 +94,9 @@ if is_raspberry_pi:
     eglCreateContext = load_egl("eglCreateContext", EGLContext, EGLDisplay, EGLConfig, EGLContext, POINTER(EGLint))
     eglMakeCurrent = load_egl("eglMakeCurrent", EGLBoolean, EGLDisplay, EGLSurface, EGLSurface, EGLContext)
     eglSwapBuffers = load_egl("eglSwapBuffers", EGLBoolean, EGLDisplay, EGLSurface)
+    eglDestroySurface = load_egl("eglDestroySurface", EGLDisplay, EGLSurface)
+    eglDestroyContext = load_egl("eglDestroyContext", EGLDisplay, EGLContext)
+    eglTerminate = load_egl("eglTerminate", EGLDisplay)
 
 
 def make_array(ctype, contents):
@@ -104,6 +107,9 @@ class BaseWindow:
     def on_resize(self, width, height):
         self.width = width
         self.height = height
+
+    def shutdown(self):
+        pass
 
 
 class RaspberryWindow(BaseWindow):
@@ -138,6 +144,11 @@ class RaspberryWindow(BaseWindow):
 
     def create_EGL_context(self, gl_version, attrib_list):
        contextAttribs = make_array(EGLint, [EGL_CONTEXT_CLIENT_VERSION, gl_version, EGL_NONE])
+
+       # This call is needed to prevent eglGetDisplay from corrupting memory, due
+       # to a bug in eglGetDisplay.
+       # See https://github.com/raspberrypi/firmware/issues/99
+       eglMakeCurrent(None, None, None, None)
        
        display = eglGetDisplay(EGL_DEFAULT_DISPLAY)
        if not display:
@@ -172,6 +183,12 @@ class RaspberryWindow(BaseWindow):
     def swap_buffers(self):
        eglSwapBuffers(self.display, self.surface)
 
+    def shutdown(self):
+       eglMakeCurrent(self.display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)
+       eglDestroySurface(self.display, self.surface)
+       eglDestroyContext(self.display, self.context)
+       eglTerminate(self.display)
+
 
 def rpi_create_window(gl_version, attrib_list):
     bcm_host_init();
@@ -188,6 +205,7 @@ class WindowsDesktopWindow(BaseWindow):
         self.height = screen.get_height()
 
     def swap_buffers(self):
+        import pygame
         pygame.display.flip()
 
 
@@ -197,6 +215,7 @@ class DesktopWindow(WindowsDesktopWindow):
         self.flags = flags
 
     def on_resize(self, width, height):
+        import pygame
         screen = pygame.display.set_mode((width, height), self.flags)
         WindowsDesktopWindow.on_resize(self, screen.get_width(), screen.get_height())
 
@@ -208,6 +227,7 @@ def create_opengl_window(width, height, flags=0):
 
     The flags parameter are additional pygame flags; OPENGL and DOUBLEBUF are already implied.
     """
+    import pygame
     if is_raspberry_pi:
         attribList = make_array(EGLint, [EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_DEPTH_SIZE, 24, EGL_NONE])
         window = rpi_create_window(2, attribList)
