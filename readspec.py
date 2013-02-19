@@ -156,8 +156,10 @@ class GLFunction:
             retval = "None"
         else:
             retval = "ctypes." + retval
-        f.write("%s = load_gl_proc(b\"%s\", %s, (%s))\n" % (self.name, self.name, retval,
+        f.write("_%s = load_gl_proc(b\"%s\", %s, (%s))\n" % (self.name, self.name, retval,
              " ".join(["ctypes.%s," % self.argtypes[a] for a in self.args])))
+        args = ", ".join(self.args)
+        f.write("def %s(%s):\n    return _%s(%s)\n" % (self.name, args, self.name, args))
 
 
 def parse_gl_spec(gl_spec):

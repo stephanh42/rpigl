@@ -2,140 +2,408 @@
 import ctypes
 from .load_gles import load_gl_proc, GLError
 
-glCullFace = load_gl_proc(b"glCullFace", None, (ctypes.c_uint,))
-glFrontFace = load_gl_proc(b"glFrontFace", None, (ctypes.c_uint,))
-glHint = load_gl_proc(b"glHint", None, (ctypes.c_uint, ctypes.c_uint,))
-glLineWidth = load_gl_proc(b"glLineWidth", None, (ctypes.c_float,))
-glScissor = load_gl_proc(b"glScissor", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
-glTexParameterf = load_gl_proc(b"glTexParameterf", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_float,))
-glTexParameterfv = load_gl_proc(b"glTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-glTexParameteri = load_gl_proc(b"glTexParameteri", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_long,))
-glTexParameteriv = load_gl_proc(b"glTexParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_long),))
-glTexImage2D = load_gl_proc(b"glTexImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_long, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
-glClear = load_gl_proc(b"glClear", None, (ctypes.c_uint,))
-glClearColor = load_gl_proc(b"glClearColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-glClearStencil = load_gl_proc(b"glClearStencil", None, (ctypes.c_int,))
-glStencilMask = load_gl_proc(b"glStencilMask", None, (ctypes.c_uint,))
-glColorMask = load_gl_proc(b"glColorMask", None, (ctypes.c_ubyte, ctypes.c_ubyte, ctypes.c_ubyte, ctypes.c_ubyte,))
-glDepthMask = load_gl_proc(b"glDepthMask", None, (ctypes.c_ubyte,))
-glDisable = load_gl_proc(b"glDisable", None, (ctypes.c_uint,))
-glEnable = load_gl_proc(b"glEnable", None, (ctypes.c_uint,))
-glFinish = load_gl_proc(b"glFinish", None, ())
-glFlush = load_gl_proc(b"glFlush", None, ())
-glBlendFunc = load_gl_proc(b"glBlendFunc", None, (ctypes.c_uint, ctypes.c_uint,))
-glStencilFunc = load_gl_proc(b"glStencilFunc", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
-glStencilOp = load_gl_proc(b"glStencilOp", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-glDepthFunc = load_gl_proc(b"glDepthFunc", None, (ctypes.c_uint,))
-glPixelStorei = load_gl_proc(b"glPixelStorei", None, (ctypes.c_uint, ctypes.c_long,))
-glReadPixels = load_gl_proc(b"glReadPixels", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
-glGetBooleanv = load_gl_proc(b"glGetBooleanv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_ubyte),))
-glGetError = load_gl_proc(b"glGetError", ctypes.c_uint, ())
-glGetFloatv = load_gl_proc(b"glGetFloatv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-glGetIntegerv = load_gl_proc(b"glGetIntegerv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glGetString = load_gl_proc(b"glGetString", ctypes.c_char_p, (ctypes.c_uint,))
-glGetTexParameterfv = load_gl_proc(b"glGetTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-glGetTexParameteriv = load_gl_proc(b"glGetTexParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glIsEnabled = load_gl_proc(b"glIsEnabled", ctypes.c_ubyte, (ctypes.c_uint,))
-glViewport = load_gl_proc(b"glViewport", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
-glDrawArrays = load_gl_proc(b"glDrawArrays", None, (ctypes.c_uint, ctypes.c_int32, ctypes.c_size_t,))
-glDrawElements = load_gl_proc(b"glDrawElements", None, (ctypes.c_uint, ctypes.c_size_t, ctypes.c_uint, ctypes.c_void_p,))
-glPolygonOffset = load_gl_proc(b"glPolygonOffset", None, (ctypes.c_float, ctypes.c_float,))
-glCopyTexImage2D = load_gl_proc(b"glCopyTexImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_long,))
-glCopyTexSubImage2D = load_gl_proc(b"glCopyTexSubImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
-glTexSubImage2D = load_gl_proc(b"glTexSubImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
-glBindTexture = load_gl_proc(b"glBindTexture", None, (ctypes.c_uint, ctypes.c_uint,))
-glDeleteTextures = load_gl_proc(b"glDeleteTextures", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint),))
-glGenTextures = load_gl_proc(b"glGenTextures", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint),))
-glIsTexture = load_gl_proc(b"glIsTexture", ctypes.c_ubyte, (ctypes.c_uint,))
-glBlendColor = load_gl_proc(b"glBlendColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-glBlendEquation = load_gl_proc(b"glBlendEquation", None, (ctypes.c_uint,))
-glActiveTexture = load_gl_proc(b"glActiveTexture", None, (ctypes.c_uint,))
-glSampleCoverage = load_gl_proc(b"glSampleCoverage", None, (ctypes.c_float, ctypes.c_ubyte,))
-glCompressedTexImage2D = load_gl_proc(b"glCompressedTexImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_uint, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_long, ctypes.c_size_t, ctypes.c_void_p,))
-glCompressedTexSubImage2D = load_gl_proc(b"glCompressedTexSubImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_uint, ctypes.c_size_t, ctypes.c_void_p,))
-glBlendFuncSeparate = load_gl_proc(b"glBlendFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-glBindBuffer = load_gl_proc(b"glBindBuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
-glDeleteBuffers = load_gl_proc(b"glDeleteBuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_ulong),))
-glGenBuffers = load_gl_proc(b"glGenBuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
-glIsBuffer = load_gl_proc(b"glIsBuffer", ctypes.c_ubyte, (ctypes.c_uint32,))
-glBufferData = load_gl_proc(b"glBufferData", None, (ctypes.c_uint, ctypes.c_ssize_t, ctypes.c_void_p, ctypes.c_uint,))
-glBufferSubData = load_gl_proc(b"glBufferSubData", None, (ctypes.c_uint, ctypes.c_size_t, ctypes.c_ssize_t, ctypes.c_void_p,))
-glGetBufferParameteriv = load_gl_proc(b"glGetBufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glBlendEquationSeparate = load_gl_proc(b"glBlendEquationSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
-glStencilOpSeparate = load_gl_proc(b"glStencilOpSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-glStencilFuncSeparate = load_gl_proc(b"glStencilFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
-glStencilMaskSeparate = load_gl_proc(b"glStencilMaskSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
-glAttachShader = load_gl_proc(b"glAttachShader", None, (ctypes.c_uint32, ctypes.c_uint32,))
-glBindAttribLocation = load_gl_proc(b"glBindAttribLocation", None, (ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_char),))
-glCompileShader = load_gl_proc(b"glCompileShader", None, (ctypes.c_uint32,))
-glCreateProgram = load_gl_proc(b"glCreateProgram", ctypes.c_uint32, ())
-glCreateShader = load_gl_proc(b"glCreateShader", ctypes.c_uint32, (ctypes.c_uint,))
-glDeleteProgram = load_gl_proc(b"glDeleteProgram", None, (ctypes.c_uint32,))
-glDeleteShader = load_gl_proc(b"glDeleteShader", None, (ctypes.c_uint32,))
-glDetachShader = load_gl_proc(b"glDetachShader", None, (ctypes.c_uint32, ctypes.c_uint32,))
-glDisableVertexAttribArray = load_gl_proc(b"glDisableVertexAttribArray", None, (ctypes.c_uint32,))
-glEnableVertexAttribArray = load_gl_proc(b"glEnableVertexAttribArray", None, (ctypes.c_uint32,))
-glGetActiveAttrib = load_gl_proc(b"glGetActiveAttrib", None, (ctypes.c_uint32, ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_char),))
-glGetActiveUniform = load_gl_proc(b"glGetActiveUniform", None, (ctypes.c_uint32, ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_char),))
-glGetAttachedShaders = load_gl_proc(b"glGetAttachedShaders", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_uint32),))
-glGetAttribLocation = load_gl_proc(b"glGetAttribLocation", ctypes.c_int32, (ctypes.c_uint32, ctypes.POINTER(ctypes.c_char),))
-glGetProgramiv = load_gl_proc(b"glGetProgramiv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glGetProgramInfoLog = load_gl_proc(b"glGetProgramInfoLog", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_char),))
-glGetShaderiv = load_gl_proc(b"glGetShaderiv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glGetShaderInfoLog = load_gl_proc(b"glGetShaderInfoLog", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_char),))
-glGetShaderSource = load_gl_proc(b"glGetShaderSource", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_char),))
-glGetUniformLocation = load_gl_proc(b"glGetUniformLocation", ctypes.c_int32, (ctypes.c_uint32, ctypes.POINTER(ctypes.c_char),))
-glGetUniformfv = load_gl_proc(b"glGetUniformfv", None, (ctypes.c_uint32, ctypes.c_int32, ctypes.POINTER(ctypes.c_float),))
-glGetUniformiv = load_gl_proc(b"glGetUniformiv", None, (ctypes.c_uint32, ctypes.c_int32, ctypes.POINTER(ctypes.c_int32),))
-glGetVertexAttribfv = load_gl_proc(b"glGetVertexAttribfv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-glGetVertexAttribiv = load_gl_proc(b"glGetVertexAttribiv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glGetVertexAttribPointerv = load_gl_proc(b"glGetVertexAttribPointerv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p),))
-glIsProgram = load_gl_proc(b"glIsProgram", ctypes.c_ubyte, (ctypes.c_uint32,))
-glIsShader = load_gl_proc(b"glIsShader", ctypes.c_ubyte, (ctypes.c_uint32,))
-glLinkProgram = load_gl_proc(b"glLinkProgram", None, (ctypes.c_uint32,))
-glShaderSource = load_gl_proc(b"glShaderSource", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_int32),))
-glUseProgram = load_gl_proc(b"glUseProgram", None, (ctypes.c_uint32,))
-glUniform1f = load_gl_proc(b"glUniform1f", None, (ctypes.c_int32, ctypes.c_float,))
-glUniform2f = load_gl_proc(b"glUniform2f", None, (ctypes.c_int32, ctypes.c_float, ctypes.c_float,))
-glUniform3f = load_gl_proc(b"glUniform3f", None, (ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-glUniform4f = load_gl_proc(b"glUniform4f", None, (ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-glUniform1i = load_gl_proc(b"glUniform1i", None, (ctypes.c_int32, ctypes.c_int32,))
-glUniform2i = load_gl_proc(b"glUniform2i", None, (ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,))
-glUniform3i = load_gl_proc(b"glUniform3i", None, (ctypes.c_int32, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,))
-glUniform4i = load_gl_proc(b"glUniform4i", None, (ctypes.c_int32, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,))
-glUniform1fv = load_gl_proc(b"glUniform1fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
-glUniform2fv = load_gl_proc(b"glUniform2fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
-glUniform3fv = load_gl_proc(b"glUniform3fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
-glUniform4fv = load_gl_proc(b"glUniform4fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
-glUniform1iv = load_gl_proc(b"glUniform1iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
-glUniform2iv = load_gl_proc(b"glUniform2iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
-glUniform3iv = load_gl_proc(b"glUniform3iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
-glUniform4iv = load_gl_proc(b"glUniform4iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
-glUniformMatrix2fv = load_gl_proc(b"glUniformMatrix2fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.c_ubyte, ctypes.POINTER(ctypes.c_float),))
-glUniformMatrix3fv = load_gl_proc(b"glUniformMatrix3fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.c_ubyte, ctypes.POINTER(ctypes.c_float),))
-glUniformMatrix4fv = load_gl_proc(b"glUniformMatrix4fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.c_ubyte, ctypes.POINTER(ctypes.c_float),))
-glValidateProgram = load_gl_proc(b"glValidateProgram", None, (ctypes.c_uint32,))
-glVertexAttribPointer = load_gl_proc(b"glVertexAttribPointer", None, (ctypes.c_uint32, ctypes.c_int32, ctypes.c_uint, ctypes.c_ubyte, ctypes.c_size_t, ctypes.c_void_p,))
-glIsRenderbuffer = load_gl_proc(b"glIsRenderbuffer", ctypes.c_ubyte, (ctypes.c_uint32,))
-glBindRenderbuffer = load_gl_proc(b"glBindRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
-glDeleteRenderbuffers = load_gl_proc(b"glDeleteRenderbuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
-glGenRenderbuffers = load_gl_proc(b"glGenRenderbuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
-glRenderbufferStorage = load_gl_proc(b"glRenderbufferStorage", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_size_t, ctypes.c_size_t,))
-glGetRenderbufferParameteriv = load_gl_proc(b"glGetRenderbufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glIsFramebuffer = load_gl_proc(b"glIsFramebuffer", ctypes.c_ubyte, (ctypes.c_uint32,))
-glBindFramebuffer = load_gl_proc(b"glBindFramebuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
-glDeleteFramebuffers = load_gl_proc(b"glDeleteFramebuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
-glGenFramebuffers = load_gl_proc(b"glGenFramebuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
-glCheckFramebufferStatus = load_gl_proc(b"glCheckFramebufferStatus", ctypes.c_uint, (ctypes.c_uint,))
-glFramebufferTexture2D = load_gl_proc(b"glFramebufferTexture2D", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint32, ctypes.c_int32,))
-glFramebufferRenderbuffer = load_gl_proc(b"glFramebufferRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint32,))
-glGetFramebufferAttachmentParameteriv = load_gl_proc(b"glGetFramebufferAttachmentParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
-glGenerateMipmap = load_gl_proc(b"glGenerateMipmap", None, (ctypes.c_uint,))
-glReleaseShaderCompiler = load_gl_proc(b"glReleaseShaderCompiler", None, ())
-glShaderBinary = load_gl_proc(b"glShaderBinary", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint, ctypes.c_void_p, ctypes.c_size_t,))
-glGetShaderPrecisionFormat = load_gl_proc(b"glGetShaderPrecisionFormat", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_int32),))
-glDepthRangef = load_gl_proc(b"glDepthRangef", None, (ctypes.c_float, ctypes.c_float,))
-glClearDepthf = load_gl_proc(b"glClearDepthf", None, (ctypes.c_float,))
+_glCullFace = load_gl_proc(b"glCullFace", None, (ctypes.c_uint,))
+def glCullFace(mode):
+    return _glCullFace(mode)
+_glFrontFace = load_gl_proc(b"glFrontFace", None, (ctypes.c_uint,))
+def glFrontFace(mode):
+    return _glFrontFace(mode)
+_glHint = load_gl_proc(b"glHint", None, (ctypes.c_uint, ctypes.c_uint,))
+def glHint(target, mode):
+    return _glHint(target, mode)
+_glLineWidth = load_gl_proc(b"glLineWidth", None, (ctypes.c_float,))
+def glLineWidth(width):
+    return _glLineWidth(width)
+_glScissor = load_gl_proc(b"glScissor", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
+def glScissor(x, y, width, height):
+    return _glScissor(x, y, width, height)
+_glTexParameterf = load_gl_proc(b"glTexParameterf", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_float,))
+def glTexParameterf(target, pname, param):
+    return _glTexParameterf(target, pname, param)
+_glTexParameterfv = load_gl_proc(b"glTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+def glTexParameterfv(target, pname, params):
+    return _glTexParameterfv(target, pname, params)
+_glTexParameteri = load_gl_proc(b"glTexParameteri", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_long,))
+def glTexParameteri(target, pname, param):
+    return _glTexParameteri(target, pname, param)
+_glTexParameteriv = load_gl_proc(b"glTexParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_long),))
+def glTexParameteriv(target, pname, params):
+    return _glTexParameteriv(target, pname, params)
+_glTexImage2D = load_gl_proc(b"glTexImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_long, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
+def glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels):
+    return _glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+_glClear = load_gl_proc(b"glClear", None, (ctypes.c_uint,))
+def glClear(mask):
+    return _glClear(mask)
+_glClearColor = load_gl_proc(b"glClearColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+def glClearColor(red, green, blue, alpha):
+    return _glClearColor(red, green, blue, alpha)
+_glClearStencil = load_gl_proc(b"glClearStencil", None, (ctypes.c_int,))
+def glClearStencil(s):
+    return _glClearStencil(s)
+_glStencilMask = load_gl_proc(b"glStencilMask", None, (ctypes.c_uint,))
+def glStencilMask(mask):
+    return _glStencilMask(mask)
+_glColorMask = load_gl_proc(b"glColorMask", None, (ctypes.c_ubyte, ctypes.c_ubyte, ctypes.c_ubyte, ctypes.c_ubyte,))
+def glColorMask(red, green, blue, alpha):
+    return _glColorMask(red, green, blue, alpha)
+_glDepthMask = load_gl_proc(b"glDepthMask", None, (ctypes.c_ubyte,))
+def glDepthMask(flag):
+    return _glDepthMask(flag)
+_glDisable = load_gl_proc(b"glDisable", None, (ctypes.c_uint,))
+def glDisable(cap):
+    return _glDisable(cap)
+_glEnable = load_gl_proc(b"glEnable", None, (ctypes.c_uint,))
+def glEnable(cap):
+    return _glEnable(cap)
+_glFinish = load_gl_proc(b"glFinish", None, ())
+def glFinish():
+    return _glFinish()
+_glFlush = load_gl_proc(b"glFlush", None, ())
+def glFlush():
+    return _glFlush()
+_glBlendFunc = load_gl_proc(b"glBlendFunc", None, (ctypes.c_uint, ctypes.c_uint,))
+def glBlendFunc(sfactor, dfactor):
+    return _glBlendFunc(sfactor, dfactor)
+_glStencilFunc = load_gl_proc(b"glStencilFunc", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
+def glStencilFunc(func, ref, mask):
+    return _glStencilFunc(func, ref, mask)
+_glStencilOp = load_gl_proc(b"glStencilOp", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+def glStencilOp(fail, zfail, zpass):
+    return _glStencilOp(fail, zfail, zpass)
+_glDepthFunc = load_gl_proc(b"glDepthFunc", None, (ctypes.c_uint,))
+def glDepthFunc(func):
+    return _glDepthFunc(func)
+_glPixelStorei = load_gl_proc(b"glPixelStorei", None, (ctypes.c_uint, ctypes.c_long,))
+def glPixelStorei(pname, param):
+    return _glPixelStorei(pname, param)
+_glReadPixels = load_gl_proc(b"glReadPixels", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
+def glReadPixels(x, y, width, height, format, type, pixels):
+    return _glReadPixels(x, y, width, height, format, type, pixels)
+_glGetBooleanv = load_gl_proc(b"glGetBooleanv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_ubyte),))
+def glGetBooleanv(pname, params):
+    return _glGetBooleanv(pname, params)
+_glGetError = load_gl_proc(b"glGetError", ctypes.c_uint, ())
+def glGetError():
+    return _glGetError()
+_glGetFloatv = load_gl_proc(b"glGetFloatv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+def glGetFloatv(pname, params):
+    return _glGetFloatv(pname, params)
+_glGetIntegerv = load_gl_proc(b"glGetIntegerv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetIntegerv(pname, params):
+    return _glGetIntegerv(pname, params)
+_glGetString = load_gl_proc(b"glGetString", ctypes.c_char_p, (ctypes.c_uint,))
+def glGetString(name):
+    return _glGetString(name)
+_glGetTexParameterfv = load_gl_proc(b"glGetTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+def glGetTexParameterfv(target, pname, params):
+    return _glGetTexParameterfv(target, pname, params)
+_glGetTexParameteriv = load_gl_proc(b"glGetTexParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetTexParameteriv(target, pname, params):
+    return _glGetTexParameteriv(target, pname, params)
+_glIsEnabled = load_gl_proc(b"glIsEnabled", ctypes.c_ubyte, (ctypes.c_uint,))
+def glIsEnabled(cap):
+    return _glIsEnabled(cap)
+_glViewport = load_gl_proc(b"glViewport", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
+def glViewport(x, y, width, height):
+    return _glViewport(x, y, width, height)
+_glDrawArrays = load_gl_proc(b"glDrawArrays", None, (ctypes.c_uint, ctypes.c_int32, ctypes.c_size_t,))
+def glDrawArrays(mode, first, count):
+    return _glDrawArrays(mode, first, count)
+_glDrawElements = load_gl_proc(b"glDrawElements", None, (ctypes.c_uint, ctypes.c_size_t, ctypes.c_uint, ctypes.c_void_p,))
+def glDrawElements(mode, count, type, indices):
+    return _glDrawElements(mode, count, type, indices)
+_glPolygonOffset = load_gl_proc(b"glPolygonOffset", None, (ctypes.c_float, ctypes.c_float,))
+def glPolygonOffset(factor, units):
+    return _glPolygonOffset(factor, units)
+_glCopyTexImage2D = load_gl_proc(b"glCopyTexImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_long,))
+def glCopyTexImage2D(target, level, internalformat, x, y, width, height, border):
+    return _glCopyTexImage2D(target, level, internalformat, x, y, width, height, border)
+_glCopyTexSubImage2D = load_gl_proc(b"glCopyTexSubImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
+def glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height):
+    return _glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height)
+_glTexSubImage2D = load_gl_proc(b"glTexSubImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
+def glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels):
+    return _glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
+_glBindTexture = load_gl_proc(b"glBindTexture", None, (ctypes.c_uint, ctypes.c_uint,))
+def glBindTexture(target, texture):
+    return _glBindTexture(target, texture)
+_glDeleteTextures = load_gl_proc(b"glDeleteTextures", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint),))
+def glDeleteTextures(n, textures):
+    return _glDeleteTextures(n, textures)
+_glGenTextures = load_gl_proc(b"glGenTextures", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint),))
+def glGenTextures(n, textures):
+    return _glGenTextures(n, textures)
+_glIsTexture = load_gl_proc(b"glIsTexture", ctypes.c_ubyte, (ctypes.c_uint,))
+def glIsTexture(texture):
+    return _glIsTexture(texture)
+_glBlendColor = load_gl_proc(b"glBlendColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+def glBlendColor(red, green, blue, alpha):
+    return _glBlendColor(red, green, blue, alpha)
+_glBlendEquation = load_gl_proc(b"glBlendEquation", None, (ctypes.c_uint,))
+def glBlendEquation(mode):
+    return _glBlendEquation(mode)
+_glActiveTexture = load_gl_proc(b"glActiveTexture", None, (ctypes.c_uint,))
+def glActiveTexture(texture):
+    return _glActiveTexture(texture)
+_glSampleCoverage = load_gl_proc(b"glSampleCoverage", None, (ctypes.c_float, ctypes.c_ubyte,))
+def glSampleCoverage(value, invert):
+    return _glSampleCoverage(value, invert)
+_glCompressedTexImage2D = load_gl_proc(b"glCompressedTexImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_uint, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_long, ctypes.c_size_t, ctypes.c_void_p,))
+def glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data):
+    return _glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data)
+_glCompressedTexSubImage2D = load_gl_proc(b"glCompressedTexSubImage2D", None, (ctypes.c_uint, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_size_t, ctypes.c_size_t, ctypes.c_uint, ctypes.c_size_t, ctypes.c_void_p,))
+def glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data):
+    return _glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data)
+_glBlendFuncSeparate = load_gl_proc(b"glBlendFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+def glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha):
+    return _glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
+_glBindBuffer = load_gl_proc(b"glBindBuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
+def glBindBuffer(target, buffer):
+    return _glBindBuffer(target, buffer)
+_glDeleteBuffers = load_gl_proc(b"glDeleteBuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_ulong),))
+def glDeleteBuffers(n, buffers):
+    return _glDeleteBuffers(n, buffers)
+_glGenBuffers = load_gl_proc(b"glGenBuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
+def glGenBuffers(n, buffers):
+    return _glGenBuffers(n, buffers)
+_glIsBuffer = load_gl_proc(b"glIsBuffer", ctypes.c_ubyte, (ctypes.c_uint32,))
+def glIsBuffer(buffer):
+    return _glIsBuffer(buffer)
+_glBufferData = load_gl_proc(b"glBufferData", None, (ctypes.c_uint, ctypes.c_ssize_t, ctypes.c_void_p, ctypes.c_uint,))
+def glBufferData(target, size, data, usage):
+    return _glBufferData(target, size, data, usage)
+_glBufferSubData = load_gl_proc(b"glBufferSubData", None, (ctypes.c_uint, ctypes.c_size_t, ctypes.c_ssize_t, ctypes.c_void_p,))
+def glBufferSubData(target, offset, size, data):
+    return _glBufferSubData(target, offset, size, data)
+_glGetBufferParameteriv = load_gl_proc(b"glGetBufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetBufferParameteriv(target, pname, params):
+    return _glGetBufferParameteriv(target, pname, params)
+_glBlendEquationSeparate = load_gl_proc(b"glBlendEquationSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
+def glBlendEquationSeparate(modeRGB, modeAlpha):
+    return _glBlendEquationSeparate(modeRGB, modeAlpha)
+_glStencilOpSeparate = load_gl_proc(b"glStencilOpSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+def glStencilOpSeparate(face, sfail, dpfail, dppass):
+    return _glStencilOpSeparate(face, sfail, dpfail, dppass)
+_glStencilFuncSeparate = load_gl_proc(b"glStencilFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
+def glStencilFuncSeparate(face, func, ref, mask):
+    return _glStencilFuncSeparate(face, func, ref, mask)
+_glStencilMaskSeparate = load_gl_proc(b"glStencilMaskSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
+def glStencilMaskSeparate(face, mask):
+    return _glStencilMaskSeparate(face, mask)
+_glAttachShader = load_gl_proc(b"glAttachShader", None, (ctypes.c_uint32, ctypes.c_uint32,))
+def glAttachShader(program, shader):
+    return _glAttachShader(program, shader)
+_glBindAttribLocation = load_gl_proc(b"glBindAttribLocation", None, (ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_char),))
+def glBindAttribLocation(program, index, name):
+    return _glBindAttribLocation(program, index, name)
+_glCompileShader = load_gl_proc(b"glCompileShader", None, (ctypes.c_uint32,))
+def glCompileShader(shader):
+    return _glCompileShader(shader)
+_glCreateProgram = load_gl_proc(b"glCreateProgram", ctypes.c_uint32, ())
+def glCreateProgram():
+    return _glCreateProgram()
+_glCreateShader = load_gl_proc(b"glCreateShader", ctypes.c_uint32, (ctypes.c_uint,))
+def glCreateShader(type):
+    return _glCreateShader(type)
+_glDeleteProgram = load_gl_proc(b"glDeleteProgram", None, (ctypes.c_uint32,))
+def glDeleteProgram(program):
+    return _glDeleteProgram(program)
+_glDeleteShader = load_gl_proc(b"glDeleteShader", None, (ctypes.c_uint32,))
+def glDeleteShader(shader):
+    return _glDeleteShader(shader)
+_glDetachShader = load_gl_proc(b"glDetachShader", None, (ctypes.c_uint32, ctypes.c_uint32,))
+def glDetachShader(program, shader):
+    return _glDetachShader(program, shader)
+_glDisableVertexAttribArray = load_gl_proc(b"glDisableVertexAttribArray", None, (ctypes.c_uint32,))
+def glDisableVertexAttribArray(index):
+    return _glDisableVertexAttribArray(index)
+_glEnableVertexAttribArray = load_gl_proc(b"glEnableVertexAttribArray", None, (ctypes.c_uint32,))
+def glEnableVertexAttribArray(index):
+    return _glEnableVertexAttribArray(index)
+_glGetActiveAttrib = load_gl_proc(b"glGetActiveAttrib", None, (ctypes.c_uint32, ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_char),))
+def glGetActiveAttrib(program, index, bufSize, length, size, type, name):
+    return _glGetActiveAttrib(program, index, bufSize, length, size, type, name)
+_glGetActiveUniform = load_gl_proc(b"glGetActiveUniform", None, (ctypes.c_uint32, ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_char),))
+def glGetActiveUniform(program, index, bufSize, length, size, type, name):
+    return _glGetActiveUniform(program, index, bufSize, length, size, type, name)
+_glGetAttachedShaders = load_gl_proc(b"glGetAttachedShaders", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_uint32),))
+def glGetAttachedShaders(program, maxCount, count, obj):
+    return _glGetAttachedShaders(program, maxCount, count, obj)
+_glGetAttribLocation = load_gl_proc(b"glGetAttribLocation", ctypes.c_int32, (ctypes.c_uint32, ctypes.POINTER(ctypes.c_char),))
+def glGetAttribLocation(program, name):
+    return _glGetAttribLocation(program, name)
+_glGetProgramiv = load_gl_proc(b"glGetProgramiv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetProgramiv(program, pname, params):
+    return _glGetProgramiv(program, pname, params)
+_glGetProgramInfoLog = load_gl_proc(b"glGetProgramInfoLog", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_char),))
+def glGetProgramInfoLog(program, bufSize, length, infoLog):
+    return _glGetProgramInfoLog(program, bufSize, length, infoLog)
+_glGetShaderiv = load_gl_proc(b"glGetShaderiv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetShaderiv(shader, pname, params):
+    return _glGetShaderiv(shader, pname, params)
+_glGetShaderInfoLog = load_gl_proc(b"glGetShaderInfoLog", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_char),))
+def glGetShaderInfoLog(shader, bufSize, length, infoLog):
+    return _glGetShaderInfoLog(shader, bufSize, length, infoLog)
+_glGetShaderSource = load_gl_proc(b"glGetShaderSource", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_char),))
+def glGetShaderSource(shader, bufSize, length, source):
+    return _glGetShaderSource(shader, bufSize, length, source)
+_glGetUniformLocation = load_gl_proc(b"glGetUniformLocation", ctypes.c_int32, (ctypes.c_uint32, ctypes.POINTER(ctypes.c_char),))
+def glGetUniformLocation(program, name):
+    return _glGetUniformLocation(program, name)
+_glGetUniformfv = load_gl_proc(b"glGetUniformfv", None, (ctypes.c_uint32, ctypes.c_int32, ctypes.POINTER(ctypes.c_float),))
+def glGetUniformfv(program, location, params):
+    return _glGetUniformfv(program, location, params)
+_glGetUniformiv = load_gl_proc(b"glGetUniformiv", None, (ctypes.c_uint32, ctypes.c_int32, ctypes.POINTER(ctypes.c_int32),))
+def glGetUniformiv(program, location, params):
+    return _glGetUniformiv(program, location, params)
+_glGetVertexAttribfv = load_gl_proc(b"glGetVertexAttribfv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+def glGetVertexAttribfv(index, pname, params):
+    return _glGetVertexAttribfv(index, pname, params)
+_glGetVertexAttribiv = load_gl_proc(b"glGetVertexAttribiv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetVertexAttribiv(index, pname, params):
+    return _glGetVertexAttribiv(index, pname, params)
+_glGetVertexAttribPointerv = load_gl_proc(b"glGetVertexAttribPointerv", None, (ctypes.c_uint32, ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p),))
+def glGetVertexAttribPointerv(index, pname, pointer):
+    return _glGetVertexAttribPointerv(index, pname, pointer)
+_glIsProgram = load_gl_proc(b"glIsProgram", ctypes.c_ubyte, (ctypes.c_uint32,))
+def glIsProgram(program):
+    return _glIsProgram(program)
+_glIsShader = load_gl_proc(b"glIsShader", ctypes.c_ubyte, (ctypes.c_uint32,))
+def glIsShader(shader):
+    return _glIsShader(shader)
+_glLinkProgram = load_gl_proc(b"glLinkProgram", None, (ctypes.c_uint32,))
+def glLinkProgram(program):
+    return _glLinkProgram(program)
+_glShaderSource = load_gl_proc(b"glShaderSource", None, (ctypes.c_uint32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_int32),))
+def glShaderSource(shader, count, string, length):
+    return _glShaderSource(shader, count, string, length)
+_glUseProgram = load_gl_proc(b"glUseProgram", None, (ctypes.c_uint32,))
+def glUseProgram(program):
+    return _glUseProgram(program)
+_glUniform1f = load_gl_proc(b"glUniform1f", None, (ctypes.c_int32, ctypes.c_float,))
+def glUniform1f(location, v0):
+    return _glUniform1f(location, v0)
+_glUniform2f = load_gl_proc(b"glUniform2f", None, (ctypes.c_int32, ctypes.c_float, ctypes.c_float,))
+def glUniform2f(location, v0, v1):
+    return _glUniform2f(location, v0, v1)
+_glUniform3f = load_gl_proc(b"glUniform3f", None, (ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+def glUniform3f(location, v0, v1, v2):
+    return _glUniform3f(location, v0, v1, v2)
+_glUniform4f = load_gl_proc(b"glUniform4f", None, (ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+def glUniform4f(location, v0, v1, v2, v3):
+    return _glUniform4f(location, v0, v1, v2, v3)
+_glUniform1i = load_gl_proc(b"glUniform1i", None, (ctypes.c_int32, ctypes.c_int32,))
+def glUniform1i(location, v0):
+    return _glUniform1i(location, v0)
+_glUniform2i = load_gl_proc(b"glUniform2i", None, (ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,))
+def glUniform2i(location, v0, v1):
+    return _glUniform2i(location, v0, v1)
+_glUniform3i = load_gl_proc(b"glUniform3i", None, (ctypes.c_int32, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,))
+def glUniform3i(location, v0, v1, v2):
+    return _glUniform3i(location, v0, v1, v2)
+_glUniform4i = load_gl_proc(b"glUniform4i", None, (ctypes.c_int32, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,))
+def glUniform4i(location, v0, v1, v2, v3):
+    return _glUniform4i(location, v0, v1, v2, v3)
+_glUniform1fv = load_gl_proc(b"glUniform1fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
+def glUniform1fv(location, count, value):
+    return _glUniform1fv(location, count, value)
+_glUniform2fv = load_gl_proc(b"glUniform2fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
+def glUniform2fv(location, count, value):
+    return _glUniform2fv(location, count, value)
+_glUniform3fv = load_gl_proc(b"glUniform3fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
+def glUniform3fv(location, count, value):
+    return _glUniform3fv(location, count, value)
+_glUniform4fv = load_gl_proc(b"glUniform4fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_float),))
+def glUniform4fv(location, count, value):
+    return _glUniform4fv(location, count, value)
+_glUniform1iv = load_gl_proc(b"glUniform1iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
+def glUniform1iv(location, count, value):
+    return _glUniform1iv(location, count, value)
+_glUniform2iv = load_gl_proc(b"glUniform2iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
+def glUniform2iv(location, count, value):
+    return _glUniform2iv(location, count, value)
+_glUniform3iv = load_gl_proc(b"glUniform3iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
+def glUniform3iv(location, count, value):
+    return _glUniform3iv(location, count, value)
+_glUniform4iv = load_gl_proc(b"glUniform4iv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.POINTER(ctypes.c_int32),))
+def glUniform4iv(location, count, value):
+    return _glUniform4iv(location, count, value)
+_glUniformMatrix2fv = load_gl_proc(b"glUniformMatrix2fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.c_ubyte, ctypes.POINTER(ctypes.c_float),))
+def glUniformMatrix2fv(location, count, transpose, value):
+    return _glUniformMatrix2fv(location, count, transpose, value)
+_glUniformMatrix3fv = load_gl_proc(b"glUniformMatrix3fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.c_ubyte, ctypes.POINTER(ctypes.c_float),))
+def glUniformMatrix3fv(location, count, transpose, value):
+    return _glUniformMatrix3fv(location, count, transpose, value)
+_glUniformMatrix4fv = load_gl_proc(b"glUniformMatrix4fv", None, (ctypes.c_int32, ctypes.c_size_t, ctypes.c_ubyte, ctypes.POINTER(ctypes.c_float),))
+def glUniformMatrix4fv(location, count, transpose, value):
+    return _glUniformMatrix4fv(location, count, transpose, value)
+_glValidateProgram = load_gl_proc(b"glValidateProgram", None, (ctypes.c_uint32,))
+def glValidateProgram(program):
+    return _glValidateProgram(program)
+_glVertexAttribPointer = load_gl_proc(b"glVertexAttribPointer", None, (ctypes.c_uint32, ctypes.c_int32, ctypes.c_uint, ctypes.c_ubyte, ctypes.c_size_t, ctypes.c_void_p,))
+def glVertexAttribPointer(index, size, type, normalized, stride, pointer):
+    return _glVertexAttribPointer(index, size, type, normalized, stride, pointer)
+_glIsRenderbuffer = load_gl_proc(b"glIsRenderbuffer", ctypes.c_ubyte, (ctypes.c_uint32,))
+def glIsRenderbuffer(renderbuffer):
+    return _glIsRenderbuffer(renderbuffer)
+_glBindRenderbuffer = load_gl_proc(b"glBindRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
+def glBindRenderbuffer(target, renderbuffer):
+    return _glBindRenderbuffer(target, renderbuffer)
+_glDeleteRenderbuffers = load_gl_proc(b"glDeleteRenderbuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
+def glDeleteRenderbuffers(n, renderbuffers):
+    return _glDeleteRenderbuffers(n, renderbuffers)
+_glGenRenderbuffers = load_gl_proc(b"glGenRenderbuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
+def glGenRenderbuffers(n, renderbuffers):
+    return _glGenRenderbuffers(n, renderbuffers)
+_glRenderbufferStorage = load_gl_proc(b"glRenderbufferStorage", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_size_t, ctypes.c_size_t,))
+def glRenderbufferStorage(target, internalformat, width, height):
+    return _glRenderbufferStorage(target, internalformat, width, height)
+_glGetRenderbufferParameteriv = load_gl_proc(b"glGetRenderbufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetRenderbufferParameteriv(target, pname, params):
+    return _glGetRenderbufferParameteriv(target, pname, params)
+_glIsFramebuffer = load_gl_proc(b"glIsFramebuffer", ctypes.c_ubyte, (ctypes.c_uint32,))
+def glIsFramebuffer(framebuffer):
+    return _glIsFramebuffer(framebuffer)
+_glBindFramebuffer = load_gl_proc(b"glBindFramebuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
+def glBindFramebuffer(target, framebuffer):
+    return _glBindFramebuffer(target, framebuffer)
+_glDeleteFramebuffers = load_gl_proc(b"glDeleteFramebuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
+def glDeleteFramebuffers(n, framebuffers):
+    return _glDeleteFramebuffers(n, framebuffers)
+_glGenFramebuffers = load_gl_proc(b"glGenFramebuffers", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32),))
+def glGenFramebuffers(n, framebuffers):
+    return _glGenFramebuffers(n, framebuffers)
+_glCheckFramebufferStatus = load_gl_proc(b"glCheckFramebufferStatus", ctypes.c_uint, (ctypes.c_uint,))
+def glCheckFramebufferStatus(target):
+    return _glCheckFramebufferStatus(target)
+_glFramebufferTexture2D = load_gl_proc(b"glFramebufferTexture2D", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint32, ctypes.c_int32,))
+def glFramebufferTexture2D(target, attachment, textarget, texture, level):
+    return _glFramebufferTexture2D(target, attachment, textarget, texture, level)
+_glFramebufferRenderbuffer = load_gl_proc(b"glFramebufferRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint32,))
+def glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer):
+    return _glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer)
+_glGetFramebufferAttachmentParameteriv = load_gl_proc(b"glGetFramebufferAttachmentParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32),))
+def glGetFramebufferAttachmentParameteriv(target, attachment, pname, params):
+    return _glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
+_glGenerateMipmap = load_gl_proc(b"glGenerateMipmap", None, (ctypes.c_uint,))
+def glGenerateMipmap(target):
+    return _glGenerateMipmap(target)
+_glReleaseShaderCompiler = load_gl_proc(b"glReleaseShaderCompiler", None, ())
+def glReleaseShaderCompiler():
+    return _glReleaseShaderCompiler()
+_glShaderBinary = load_gl_proc(b"glShaderBinary", None, (ctypes.c_size_t, ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint, ctypes.c_void_p, ctypes.c_size_t,))
+def glShaderBinary(count, shaders, binaryformat, binary, length):
+    return _glShaderBinary(count, shaders, binaryformat, binary, length)
+_glGetShaderPrecisionFormat = load_gl_proc(b"glGetShaderPrecisionFormat", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_int32),))
+def glGetShaderPrecisionFormat(shadertype, precisiontype, range, precision):
+    return _glGetShaderPrecisionFormat(shadertype, precisiontype, range, precision)
+_glDepthRangef = load_gl_proc(b"glDepthRangef", None, (ctypes.c_float, ctypes.c_float,))
+def glDepthRangef(n, f):
+    return _glDepthRangef(n, f)
+_glClearDepthf = load_gl_proc(b"glClearDepthf", None, (ctypes.c_float,))
+def glClearDepthf(d):
+    return _glClearDepthf(d)
 GL_VERSION_1_1 = 1
 GL_VERSION_1_2 = 1
 GL_VERSION_1_3 = 1

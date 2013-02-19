@@ -9,28 +9,29 @@ vertex_glsl = """
 uniform mat4 mvp_mat; // a uniform is an input to the shader which is the same for all vertices
 
 attribute vec2 vertex_attrib; // an attribute is a vertex-specific input to the vertex shader
-attribute vec3 color_attrib; 
+attribute vec2 texcoord_attrib; // an attribute is a vertex-specific input to the vertex shader
 
-varying vec3 color_var; // a varying is output to the vertex shader and input to the fragment shader
+varying vec2 texcoord_var;  // a varying is output to the vertex shader and input to the fragment shader
 
 void main(void) {
   gl_Position = mvp_mat * vec4(vertex_attrib, 0.0, 1.0);
-  color_var = color_attrib;
+  texcoord_var = texcoord_attrib;
 }
 """
 
 # Here is the fragment shader
 fragment_glsl = """
-varying vec3 color_var; // should match the declaration of the varying in the vertex shader
+uniform sampler2D texture; // access the texture
+varying vec2 texcoord_var;
 void main(void) {
-  gl_FragColor = vec4(color_var, 1);
+  gl_FragColor = texture2D(texture, texcoord_var);
 }
 """
 
 # The array spec: names and formats of the per-vertex attributes
 #   vertex_attrib:2h  = two signed short integers  
 #   color_attrib:3Bn  = three unsigned bytes, normalized (i.e. shader scales number 0..255 back to a float in range 0..1)
-array_spec = glesutils.ArraySpec("vertex_attrib:2h color_attrib:3Bn")
+array_spec = glesutils.ArraySpec("vertex_attrib,texcoord_attrib:2h")
 
 class MyWindow(glesutils.GameWindow):
     framerate = 20
@@ -50,16 +51,20 @@ class MyWindow(glesutils.GameWindow):
         # set the background to RGBA = (1, 0, 0, 1) (solid red)
         glClearColor(1, 0, 0, 1)
 
+        # set up pre-multiplied alpha
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+
         # load uniforms and enable attributes
         # note: the program must be use()-d for this to work
         self.mvp_mat = program.uniform.mvp_mat
         self.mvp_mat.load(transforms.rotation_degrees(self.angle, "z"))
+        program.uniform.texture.load_int(0) # bind texture to texture unit 0
         program.attrib.vertex_attrib.enable()
-        program.attrib.color_attrib.enable()
+        program.attrib.texcoord_attrib.enable()
    
         # data for the three vertices
-        positions = ((0, 0), (0, 1), (1, 1))
-        colors = ((255, 0, 0), (0, 255, 0), (0, 0, 255))
+        positions = ((0, 0), (0, 1), (1, 1), (1, 0))
         # create an array buffer from the spec
         # note: all buffer objects are automatically bound on creation
         vbo = array_spec.create_buffer(len(positions))
@@ -67,7 +72,6 @@ class MyWindow(glesutils.GameWindow):
 
         # load the actual data for each attribute
         vbo.load("vertex_attrib", positions)
-        vbo.load("color_attrib", colors)
 
         # attach() sets up the attrib pointers
         # can only be called when vbo is bound and program is used
@@ -75,7 +79,10 @@ class MyWindow(glesutils.GameWindow):
 
         # create an element buffer
         # type='B' means unsigned byte
-        self.elem_vbo = glesutils.ElementBuffer([0, 1, 2], type='B')
+        self.elem_vbo = glesutils.ElementBuffer([0, 1, 2, 0, 2, 3], type='B')
+
+        self.texture = glesutils.Texture.from_file("apple.png")
+        print("texture size: %dx%d" % (self.texture.width, self.texture.height))
 
         # print some OpenGL implementation information
         print((glGetString(GL_VENDOR)))
