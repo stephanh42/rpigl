@@ -85,9 +85,10 @@ class MyWindow(glesutils.GameWindow):
         print("texture size: %dx%d" % (self.texture.width, self.texture.height))
 
         # print some OpenGL implementation information
-        print((glGetString(GL_VENDOR)))
-        print((glGetString(GL_VERSION)))
-        print((glGetString(GL_EXTENSIONS)))
+        version = glesutils.get_version()
+        for k in version.__dict__:
+            print("%s: %s" % (k, getattr(version, k)))
+        
 
     def on_frame(self, time):
         self.angle = self.angle + time*0.05

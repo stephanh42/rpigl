@@ -452,15 +452,20 @@ class Texture(object):
         """Load texture data from the given pointer."""
         format = self._formats[format]
         repeat_s, repeat_t = self._repeats[repeat]
+        mipmap_generation = get_version().mipmap_generation if mipmap else None
+
         self.bind()
-        gles2.glTexImage2D(self.target, 0, format, width, height, 0, format, gles2.GL_UNSIGNED_BYTE, pointer)
 
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MIN_FILTER, gles2.GL_LINEAR_MIPMAP_LINEAR if mipmap else gles2.GL_LINEAR)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MAG_FILTER, gles2.GL_LINEAR)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_S, repeat_s)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_T, repeat_t)
+        if mipmap_generation == "GL_GENERATE_MIPMAP":
+            gles2.glTexParameteri(self.target, gles2.GL_GENERATE_MIPMAP, gles2.GL_TRUE)
 
-        if mipmap:
+        gles2.glTexImage2D(self.target, 0, format, width, height, 0, format, gles2.GL_UNSIGNED_BYTE, pointer)
+
+        if mipmap_generation == "glGenerateMipmap":
             gles2.glGenerateMipmap(gles2.GL_TEXTURE_2D)
 
         self.width = width
@@ -512,6 +517,62 @@ class Texture(object):
         """Create texture from a file, either indictaed by name or by file object."""
         return cls().load_from_file(filename_or_obj, **kws)
 
+
+
+class Version(object):
+    """Consult OpenGL version information"""
+
+    _gl_version_re = re.compile(r"([0-9.]+)\s")
+    _gles_version_re = re.compile(r"OpenGL ES-([A-Z]+) ([0-9.]+)")
+
+    def __init__(self):
+        self.vendor = gles2.glGetString(gles2.GL_VENDOR).decode()
+        self.renderer = gles2.glGetString(gles2.GL_RENDERER).decode()
+        self.version = gles2.glGetString(gles2.GL_VERSION).decode()
+        self.extensions = frozenset(ext.decode() for ext in gles2.glGetString(gles2.GL_EXTENSIONS).split())
+
+        mo = self._gl_version_re.match(self.version)
+        if mo is not None:
+            self.gl_version = tuple(int(n) for n in mo.group(1).split("."))
+        else:
+            self.gl_version = ()
+
+        mo = self._gles_version_re.match(self.version)
+        if mo is not None:
+            gles_version = tuple(int(n) for n in mo.group(2).split("."))
+            self.gles_version = gles_version
+            self.gles_profile = mo.group(1)
+        else:
+            self.gles_version = ()
+            self.gles_profile = ""
+
+        if self.has_gl_version(3) or self.has_gles_version(2) or self.has_extension("GL_ARB_framebuffer_object"):
+            mipmap_generation = "glGenerateMipmap"
+        elif self.has_gl_version(1, 4):
+            mipmap_generation = "GL_GENERATE_MIPMAP"
+        else:
+            mipmap_generation = None
+        self.mipmap_generation = mipmap_generation
+
+
+    def has_gl_version(self, *desired_version):
+        return desired_version <= self.gl_version
+
+    def has_gles_version(self, *desired_version):
+        return desired_version <= self.gles_version
+
+    def has_extension(self, extension):
+        return extension in self.extensions
+
+
+
+_version = None
+
+def get_version():
+    global _version
+    if _version is None:
+        _version = Version()
+    return _version
 
 
 class EventHandler(object):
