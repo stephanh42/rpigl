@@ -456,7 +456,7 @@ class Texture(object):
 
         self.bind()
 
-        gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MIN_FILTER, gles2.GL_LINEAR_MIPMAP_LINEAR if mipmap else gles2.GL_LINEAR)
+        gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MIN_FILTER, gles2.GL_LINEAR_MIPMAP_LINEAR if mipmap_generation else gles2.GL_LINEAR)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MAG_FILTER, gles2.GL_LINEAR)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_S, repeat_s)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_T, repeat_t)
@@ -523,7 +523,7 @@ class Version(object):
     """Consult OpenGL version information"""
 
     _gl_version_re = re.compile(r"([0-9.]+)\s")
-    _gles_version_re = re.compile(r"OpenGL ES-([A-Z]+) ([0-9.]+)")
+    _gles_version_re = re.compile(r"OpenGL\s+ES(?:-([A-Z]+))?\s+([0-9.]+)")
 
     def __init__(self):
         self.vendor = gles2.glGetString(gles2.GL_VENDOR).decode()
