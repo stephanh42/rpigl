@@ -267,6 +267,7 @@ class ArraySpec(object):
 
 
 class BufferObject(object):
+    """Base class for OpenGL buffer objects."""
     bound_buffers = {}
     byte_size = 0
 
@@ -277,6 +278,7 @@ class BufferObject(object):
         self.vbo = vbo
 
     def bind(self):
+        """Bind the buffer object."""
         gles2.glBindBuffer(self.target, self.vbo)
         self.bound_buffers[self.target] = self.vbo
 
@@ -284,6 +286,7 @@ class BufferObject(object):
         return self.bound_buffers.get(self.target, None) == self.vbo
 
     def delete(self):
+        """Delete the buffer object."""
         gles2.glDeleteBuffers(1, ctypes.byref(self.vbo))
         self.vbo.value = 0
 
@@ -324,9 +327,11 @@ class SlicedBuffer(object):
 
 
 class ArrayBuffer(BufferObject):
+    """An OpenGL array buffer object."""
     target = gles2.GL_ARRAY_BUFFER
 
     def __init__(self, spec, length, usage=gles2.GL_STATIC_DRAW):
+        """Create an array buffer object from the given ArraySpec and with the given length."""
         BufferObject.__init__(self, usage)
         if not isinstance(spec, ArraySpec):
             spec = ArraySpec(spec)
@@ -365,6 +370,7 @@ class ArrayBuffer(BufferObject):
             
 
 class ElementBuffer(BufferObject):
+    """An OpenGL element buffer object."""
     target = gles2.GL_ELEMENT_ARRAY_BUFFER
     gl_types = {'B' : gles2.GL_UNSIGNED_BYTE, 'H' : gles2.GL_UNSIGNED_SHORT}
 
@@ -408,7 +414,6 @@ def load_uniform(uniform, ar):
     ptr = ar.ctypes.data_as(c_float_p)
     loader(uniform, ptr)
 
-
 def _get_array_from_alpha_surface(surface):
     rgb = pygame.surfarray.pixels3d(surface).astype(numpy.uint16)
     alpha = pygame.surfarray.pixels_alpha(surface)
@@ -420,18 +425,87 @@ def _get_array_from_alpha_surface(surface):
     return result
 
 
+_numpy_formats = {3 : gles2.GL_RGB, 4 : gles2.GL_RGBA}
+
+class TextureData(object):
+    """A representation of texture data in main memory, before being uploaded to the GPU."""
+
+    __slots__ = ["pointer", "width", "height", "format", "extra_data"]
+    
+    def __init__(self, pointer, width, height, format, extra_data=None):
+        """Create a TextureData object.
+        pointer        -- ctypes pointer to data
+        width,height   -- image size
+        format         -- an OpenGL format such as GL_RGB or GL_RGBA
+        extra_data     -- an arbitrary object which must be kept alive to keep 'pointer' valid
+        """
+        self.pointer = pointer
+        self.width = width
+        self.height = height
+        self.format = format
+        self.extra_data = extra_data
+
+    @staticmethod
+    def from_ndarray(ar):
+        """Create texture data from a Numpy ndarray."""
+        ar = numpy.ascontiguousarray(ar, dtype=numpy.uint8)
+        height, width, depth = ar.shape
+        format = _numpy_formats[depth]
+        return TextureData(ar.ctypes.data, width, height, format, ar)
+ 
+    @staticmethod
+    def from_surface(surface):
+        """Create texture data from a Pygame Surface."""
+        if surface.get_flags() & pygame.SRCALPHA:
+            desired_depth = 32
+            get_array = _get_array_from_alpha_surface
+            convert = surface.convert_alpha
+        else:
+            desired_depth = 24
+            get_array = pygame.surfarray.pixels3d
+            convert = surface.convert
+
+        if surface.get_bitsize() != desired_depth:
+            surface = convert(desired_depth, surface.get_flags())
+
+        ar = numpy.swapaxes(get_array(surface), 0, 1)
+        return TextureData.from_ndarray(ar)
+
+    @staticmethod
+    def from_file(filename_or_obj):
+        """Create texture data from a file, either indicated by name or by file object."""
+        return TextureData.from_surface(pygame.image.load(filename_or_obj))
+
+
+_cube_coords = ((2, 1), (0, 1), (1, 0), (1, 2), (1, 1), (3, 1))
+
+def split_cube_map(surface):
+    """Split a single image into 6 images, corresponding to the 6 sides of a cube.
+    Images should be laid out like this:
+    .3..
+    2516
+    .4..
+    """
+    w = surface.get_width() // 4
+    h = surface.get_height() // 3
+    return [surface.subsurface(pygame.Rect(w*x, h*y, w, h)) for (x, y) in _cube_coords]
+
+
+_cubemap_targets = (gles2.GL_TEXTURE_CUBE_MAP_POSITIVE_X, gles2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
+   gles2.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, gles2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 
+   gles2.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, gles2.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z)
+
+_repeats = {
+  "none" : (gles2.GL_CLAMP_TO_EDGE, gles2.GL_CLAMP_TO_EDGE),
+  "x" : (gles2.GL_REPEAT, gles2.GL_CLAMP_TO_EDGE),
+  "y" : (gles2.GL_CLAMP_TO_EDGE, gles2.GL_REPEAT),
+  "both" : (gles2.GL_REPEAT, gles2.GL_REPEAT)
+  }
+
 class Texture(object):
     """An OpenGL texture object."""
-    target = gles2.GL_TEXTURE_2D
 
-    _formats = {"rgb" : gles2.GL_RGB, "rgba" : gles2.GL_RGBA}
-    _numpy_formats = {3 : "rgb", 4 : "rgba"}
-    _repeats = {
-      "none" : (gles2.GL_CLAMP_TO_EDGE, gles2.GL_CLAMP_TO_EDGE),
-      "x" : (gles2.GL_REPEAT, gles2.GL_CLAMP_TO_EDGE),
-      "y" : (gles2.GL_CLAMP_TO_EDGE, gles2.GL_REPEAT),
-      "both" : (gles2.GL_REPEAT, gles2.GL_REPEAT)
-      }
+    __slots__ = ["texture", "target"]
 
     def __init__(self):
         """Create a new texture with initially no texture data."""
@@ -448,11 +522,20 @@ class Texture(object):
         gles2.glDeleteTextures(1, ctype.byref(self.texture))
         self.texture.value = 0
 
-    def load_from_ctypes(self, pointer, width, height, format, repeat="none", mipmap=True):
+    def load(self, texture_data, repeat="none", mipmap=True, cubemap=False, conversion=lambda x:x):
         """Load texture data from the given pointer."""
-        format = self._formats[format]
-        repeat_s, repeat_t = self._repeats[repeat]
+        repeat_s, repeat_t = _repeats[repeat]
         mipmap_generation = get_version().mipmap_generation if mipmap else None
+
+        if cubemap:
+            self.target = gles2.GL_TEXTURE_CUBE_MAP
+            targets = _cubemap_targets
+        else:
+            self.target = gles2.GL_TEXTURE_2D
+            targets = (self.target,)
+            texture_data = (texture_data,)
+
+        assert len(targets) == len(texture_data)
 
         self.bind()
 
@@ -460,63 +543,41 @@ class Texture(object):
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MAG_FILTER, gles2.GL_LINEAR)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_S, repeat_s)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_T, repeat_t)
+        if cubemap:
+            gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_R, gles2.GL_CLAMP_TO_EDGE)
+
         if mipmap_generation == "GL_GENERATE_MIPMAP":
             gles2.glTexParameteri(self.target, gles2.GL_GENERATE_MIPMAP, gles2.GL_TRUE)
 
-        gles2.glTexImage2D(self.target, 0, format, width, height, 0, format, gles2.GL_UNSIGNED_BYTE, pointer)
+        for i in range(len(targets)):
+            data = conversion(texture_data[i])
+            gles2.glTexImage2D(targets[i], 0, data.format, data.width, data.height, 0, data.format, gles2.GL_UNSIGNED_BYTE, data.pointer)
 
         if mipmap_generation == "glGenerateMipmap":
-            gles2.glGenerateMipmap(gles2.GL_TEXTURE_2D)
+            gles2.glGenerateMipmap(self.target)
 
-        self.width = width
-        self.height = height
 
-        return self
-
-    def load_from_ndarray(self, ar, **kws):
-        """Load texture data from a Numpy ndarray."""
-        ar = numpy.ascontiguousarray(ar, dtype=numpy.uint8)
-        height, width, depth = ar.shape
-        format = self._numpy_formats[depth]
-        return self.load_from_ctypes(ar.ctypes.data, width, height, format, **kws)
-
-    def load_from_surface(self, surface, **kws):
-        """Load texture data from a Pygame Surface."""
-        if surface.get_flags() & pygame.SRCALPHA:
-            desired_depth = 32
-            get_array = _get_array_from_alpha_surface
-            convert = surface.convert_alpha
-        else:
-            desired_depth = 24
-            get_array = pygame.surfarray.pixels3d
-            convert = surface.convert
-
-        if surface.get_bitsize() != desired_depth:
-            surface = convert(desired_depth, surface.get_flags())
-
-        ar = numpy.swapaxes(get_array(surface), 0, 1)
-        return self.load_from_ndarray(ar, **kws)
-
-    def load_from_file(self, filename_or_obj, **kws):
-        """Load texture data from a file, either indictaed by name or by file object."""
-        return self.load_from_surface(pygame.image.load(filename_or_obj), **kws)
-
+    @classmethod
+    def from_data(cls, texture_data, **kws):
+        """Create texture from texture data."""
+        texture = cls()
+        texture.load(texture_data, **kws)
+        return texture
     
     @classmethod
     def from_ndarray(cls, ar, **kws):
         """Create texture from a Numpy ndarray."""
-        return cls().load_from_ndarray(ar, **kws)
+        return cls.from_data(ar, conversion=TextureData.from_ndarray, **kws)
 
     @classmethod
     def from_surface(cls, surface, **kws):
         """Create texture from a Pygame Surface."""
-        return cls().load_from_surface(surface, **kws)
+        return cls.from_data(surface, conversion=TextureData.from_surface, **kws)
 
     @classmethod
     def from_file(cls, filename_or_obj, **kws):
         """Create texture from a file, either indictaed by name or by file object."""
-        return cls().load_from_file(filename_or_obj, **kws)
-
+        return cls.from_data(filename_or_obj, conversion=TextureData.from_file, **kws)
 
 
 class Version(object):
@@ -569,6 +630,7 @@ class Version(object):
 _version = None
 
 def get_version():
+    """Get a cached Version object."""
     global _version
     if _version is None:
         _version = Version()

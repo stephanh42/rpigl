@@ -63,8 +63,7 @@ def check_gl_error(name, result, func, args):
         msg = "There is not enough memory left to execute the command."
     else:
         msg = "%d" % err
-    import string
-    raise GLError("OpenGL error in %s(%s): %s" % (name, string.join([str(a) for a in args], ", "), msg))
+    raise GLError("OpenGL error in %s(%s): %s" % (name.decode(), ", ".join([str(a) for a in args]), msg))
 
 
 @lazycallable

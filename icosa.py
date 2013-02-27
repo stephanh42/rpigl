@@ -69,32 +69,48 @@ for i in range(3):
 
 vertex_glsl = """
 uniform mat4 mvp_mat;
+uniform mat3 texcoord_mat;
+
 attribute vec3 vertex_attrib;
 attribute vec3 normal_attrib;
+attribute vec3 texcoord_attrib;
+
 varying vec3 normal_var;
+varying vec3 texcoord_var;
+
 void main(void) {
   gl_Position = mvp_mat * vec4(vertex_attrib, 1.0);
   normal_var = normal_attrib;
+  texcoord_var = texcoord_mat * texcoord_attrib;
 }
 """
 
 fragment_glsl = """
-varying vec3 normal_var;
+uniform samplerCube texture;
 uniform vec3 light_dir;
+
+varying vec3 normal_var;
+varying vec3 texcoord_var;
+
 void main(void) {
   float s = dot(normal_var, light_dir); 
-  gl_FragColor = vec4(s, s, s, 1.0);
+  vec4 color = textureCube(texture, texcoord_var);
+  gl_FragColor = s * color;
 }
 """
 
-array_spec = glesutils.ArraySpec("vertex_attrib,normal_attrib:3f")
+array_spec = glesutils.ArraySpec("vertex_attrib,normal_attrib,texcoord_attrib:3f")
 
 class MyWindow(glesutils.GameWindow):
+
+    angle = 0
+    framerate = 20
 
     def init(self):
         vertex_shader = glesutils.VertexShader(vertex_glsl)
         fragment_shader = glesutils.FragmentShader(fragment_glsl)
         program = glesutils.Program(vertex_shader, fragment_shader)
+        self.program = program
 
         vertex_shader.delete()
         fragment_shader.delete()
@@ -112,8 +128,10 @@ class MyWindow(glesutils.GameWindow):
 #        program.uniform.mvp_mat.load(transforms.rotation_degrees(45, "z"))
         program.uniform.mvp_mat.load(transforms.identity)
         program.uniform.light_dir.load((0, 1, -1))
+        program.uniform.texture.load_int(0)
         program.attrib.vertex_attrib.enable()
         program.attrib.normal_attrib.enable()
+        program.attrib.texcoord_attrib.enable()
         print(program.enabled_attribs())
 
         vbo = array_spec.create_buffer(len(vertices))
@@ -123,14 +141,22 @@ class MyWindow(glesutils.GameWindow):
 
         self.elem_vbo = glesutils.ElementBuffer(indices, type='H')
 
+        img = pygame.image.load("world_cube_net.png")
+        self.texture = glesutils.Texture.from_surface(glesutils.split_cube_map(img), cubemap=True)
+ 
         print(glGetString(GL_VENDOR))
         print(glGetString(GL_VERSION))
         print(glGetString(GL_EXTENSIONS))
 
         print("Total VBO size: %gKb" % ((self.vbo.byte_size + self.elem_vbo.byte_size)/1024.0))
 
+    def on_frame(self, time):
+        self.angle = self.angle + time*0.05
+        self.redraw()
 
     def draw(self):
+        m = transforms.compose(transforms.rotation_degrees(self.angle, "y"), transforms.stretching(-1, 1, 1))
+        self.program.uniform.texcoord_mat.load(m[:3,:3])
         self.elem_vbo[:].draw()
 
 

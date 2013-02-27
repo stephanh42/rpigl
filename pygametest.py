@@ -81,8 +81,9 @@ class MyWindow(glesutils.GameWindow):
         # type='B' means unsigned byte
         self.elem_vbo = glesutils.ElementBuffer([0, 1, 2, 0, 2, 3], type='B')
 
-        self.texture = glesutils.Texture.from_file("apple.png")
-        print("texture size: %dx%d" % (self.texture.width, self.texture.height))
+        texture_data = glesutils.TextureData.from_file("apple.png")
+        self.texture = glesutils.Texture.from_data(texture_data)
+        print("Texture size: %dx%d" % (texture_data.width, texture_data.height))
 
         # print some OpenGL implementation information
         version = glesutils.get_version()
