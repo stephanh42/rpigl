@@ -66,23 +66,25 @@ def check_gl_error(name, result, func, args):
     raise GLError("OpenGL error in %s(%s): %s" % (name.decode(), ", ".join([str(a) for a in args]), msg))
 
 
+def _load_gl_proc_helper(name, restype, argtypes):
+    raw_proc = raw_load_gl_proc(name)
+    if raw_proc is None:
+        return None
+    prototype = GLFUNCTYPE(restype, *argtypes)
+    try:
+        return prototype(raw_proc)
+    except AttributeError:
+        return None
+
+
 @lazycallable
 def load_gl_proc(name, restype, argtypes):
-    while True:
-        raw_proc = raw_load_gl_proc(name)
-        if raw_proc is None:
-            raise GLError("OpenGL procedure not available: %s" % name)
-        prototype = GLFUNCTYPE(restype, *argtypes)
-        try:
-            proc = prototype(raw_proc)
-        except AttributeError:
-            if name[-1] == b"f":
-                name = name[:-1]
-                argtypes = [ctypes.c_double if t == ctypes.c_float else t for t in argtypes]
-                continue
-            else:
-                raise
-        break
+    proc = _load_gl_proc_helper(name, restype, argtypes)
+    if proc is None and name[-1:] == b"f":
+        argtypes = [ctypes.c_double if t == ctypes.c_float else t for t in argtypes]
+        proc = _load_gl_proc_helper(name[:-1], restype, argtypes)
+    if proc is None:
+        raise GLError("OpenGL procedure not available: %s" % name)
     if name != b"glGetError":
         proc.errcheck = functools.partial(check_gl_error, name)
     return proc
