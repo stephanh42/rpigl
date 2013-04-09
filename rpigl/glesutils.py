@@ -477,18 +477,47 @@ class TextureData(object):
         return TextureData.from_surface(pygame.image.load(filename_or_obj))
 
 
-_cube_coords = ((2, 1), (0, 1), (1, 0), (1, 2), (1, 1), (3, 1))
-
-def split_cube_map(surface):
-    """Split a single image into 6 images, corresponding to the 6 sides of a cube.
-    Images should be laid out like this:
-    .3..
-    2516
-    .4..
+class CubeFormat(object):
+    """Represents a way to lay out the 6 faces of the cube in a single image.
+    Example format:
+    .Y..
+    xzXZ
+    .y..
     """
-    w = surface.get_width() // 4
-    h = surface.get_height() // 3
-    return [surface.subsurface(pygame.Rect(w*x, h*y, w, h)) for (x, y) in _cube_coords]
+
+    _side_map = {'x' : 0, 'X' : 1, 'y' : 2, 'Y' : 3, 'z' : 4, 'Z' : 5}
+
+    def __init__(self, format):
+        format = format.split()
+        height = len(format)
+        width = max(len(line) for line in format)
+
+        cube_coords = [None] * 6
+        for iy in range(height):
+            line = format[iy]
+            for ix in range(len(line)):
+                ch = line[ix]
+                if ch in self._side_map:
+                    n = self._side_map[ch]
+                    cube_coords[n] = (ix, iy)
+
+        for coord in cube_coords:
+            assert coord is not None
+
+        self.format = "\n".join(format)
+        self.width = width
+        self.height = height
+        self.cube_coords = tuple(cube_coords)
+
+    def split(self, surface):
+        """Split a single image into 6 images, corresponding to the 6 sides of a cube."""
+        w = surface.get_width() // self.width
+        h = surface.get_height() // self.height
+        cube_coords = self.cube_coords
+        return [surface.subsurface(pygame.Rect(w*x, h*y, w, h)) for (x, y) in cube_coords]
+
+
+split_cube_map = CubeFormat(".y.. XzxZ .Y..").split
 
 
 _cubemap_targets = (gles2.GL_TEXTURE_CUBE_MAP_POSITIVE_X, gles2.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
@@ -525,7 +554,8 @@ class Texture(object):
     def load(self, texture_data, repeat="none", mipmap=True, cubemap=False, conversion=lambda x:x):
         """Load texture data from the given pointer."""
         repeat_s, repeat_t = _repeats[repeat]
-        mipmap_generation = get_version().mipmap_generation if mipmap else None
+        version = get_version()
+        mipmap_generation = version.mipmap_generation if mipmap else None
 
         if cubemap:
             self.target = gles2.GL_TEXTURE_CUBE_MAP
@@ -543,7 +573,8 @@ class Texture(object):
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MAG_FILTER, gles2.GL_LINEAR)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_S, repeat_s)
         gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_T, repeat_t)
-        if cubemap:
+        if cubemap and version.gl_version:
+            # Apparently this does not work on GLES?
             gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_R, gles2.GL_CLAMP_TO_EDGE)
 
         if mipmap_generation == "GL_GENERATE_MIPMAP":
