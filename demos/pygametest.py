@@ -45,9 +45,6 @@ class MyWindow(glesutils.GameWindow):
         fragment_shader = glesutils.FragmentShader(fragment_glsl)
         # link them together into a program
         program = glesutils.Program(vertex_shader, fragment_shader)
-        # use the program
-        program.use()
-
         # set the background to RGBA = (1, 0, 0, 1) (solid red)
         glClearColor(1, 0, 0, 1)
 
@@ -55,35 +52,29 @@ class MyWindow(glesutils.GameWindow):
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 
-        # load uniforms and enable attributes
-        # note: the program must be use()-d for this to work
+        # load uniforms
         self.mvp_mat = program.uniform.mvp_mat
-        self.mvp_mat.load(transforms.rotation_degrees(self.angle, "z"))
-        program.uniform.texture.load_int(0) # bind texture to texture unit 0
-        program.attrib.vertex_attrib.enable()
-        program.attrib.texcoord_attrib.enable()
+        self.mvp_mat.value = transforms.rotation_degrees(self.angle, "z")
+
+        # bind uniform named "texture" to texture unit 1
+        # normally, when using only one texture, 0 would be more logical,
+        # but this is just for demo purposes
+        program.uniform.texture.value = 1 # bind texture to texture unit 1
    
         # data for the three vertices
         positions = ((0, 0), (0, 1), (1, 1), (1, 0))
+        elements = (0, 1, 2, 0, 2, 3)
         # create an array buffer from the spec
         # note: all buffer objects are automatically bound on creation
-        vbo = array_spec.create_buffer(len(positions))
-        self.vbo = vbo
-
-        # load the actual data for each attribute
-        vbo.load("vertex_attrib", positions)
-
-        # attach() sets up the attrib pointers
-        # can only be called when vbo is bound and program is used
-        vbo.attach(program)
-
-        # create an element buffer
-        # type='B' means unsigned byte
-        self.elem_vbo = glesutils.ElementBuffer([0, 1, 2, 0, 2, 3], type='B')
+        self.drawing = array_spec.make_drawing(vertex_attrib=positions, elements=elements)
 
         texture_data = glesutils.TextureData.from_file("apple.png")
         self.texture = glesutils.Texture.from_data(texture_data)
         print("Texture size: %dx%d" % (texture_data.width, texture_data.height))
+
+        # use the program, bind the texture
+        program.use()
+        self.texture.bind(program.uniform.texture.value)
 
         # print some OpenGL implementation information
         version = glesutils.get_version()
@@ -97,11 +88,11 @@ class MyWindow(glesutils.GameWindow):
 
     def draw(self):
         #update uniform
-        self.mvp_mat.load(transforms.rotation_degrees(self.angle, "z"))
+        self.mvp_mat.value = transforms.rotation_degrees(self.angle, "z")
 
         # draw triangles
-        # program must be used, array and element buffer must be bound
-        self.elem_vbo.draw()
+        # program must be used
+        self.drawing.draw()
 
 
 MyWindow(640, 480, pygame.RESIZABLE).run()

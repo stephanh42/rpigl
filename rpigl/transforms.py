@@ -84,3 +84,12 @@ def compose(*matrices):
 def normal_transform(matrix):
     """Compute the 3x3 matrix which transforms normals given an affine vector transform."""
     return inv(numpy.transpose(matrix[:3,:3]))
+
+_2d_indices = numpy.array((0, 1, 3))
+_2d_selection_tuple = (_2d_indices[:,numpy.newaxis], _2d_indices[numpy.newaxis,:])
+
+def as_2d_transform(matrix):
+    """Create a 3x3 matrix from a 4x4 matrix by crossing out the third row and column.
+    This effectively turns a projective transform in 3D space into a projective transform in 2D space.
+    """
+    return matrix[_2d_selection_tuple]

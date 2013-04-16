@@ -12,6 +12,7 @@ import re
 from operator import attrgetter
 from functools import partial
 from .lazycall import LazyAttr
+import contextlib
 
 def _get_params(f, *args):
     params = ctypes.c_int32(0)
@@ -53,6 +54,38 @@ def create_program(*shaders):
     return program
 
 
+_gl_active = False
+_saved_actions = []
+
+def do_when_gl_active(action):
+    """Invoke action (which must be a callable wich takes no arguments)
+    as soon as the OpenGL context is active.
+
+    If the OpenGL context is active, action is invoked immediately.
+    """
+    if _gl_active:
+        action()
+    elif _saved_actions is not None:
+        _saved_actions.append(action)
+
+
+def invoke_with_gl_active(f):
+    """Call f with the OpenGL context marked as active.
+    Note that this function does not, itself, activate the OpenGL context.
+    Rather, it just marks it as such.
+    """
+    global _gl_active
+    saved_gl_active = _gl_active
+    try:
+        _gl_active = True
+        while _saved_actions:
+            action = _saved_actions.pop()
+            action()
+        f()
+    finally:
+        _gl_active = saved_gl_active
+
+
 class Shader(object):
     """OpenGL shader object."""
 
@@ -60,10 +93,9 @@ class Shader(object):
         """Create a shader object from the GLSL source code."""
         self.shader = load_shader(code, self.shader_type)
 
-    def delete(self):
+    def __del__(self):
         """Delete the shader object."""
-        gles2.glDeleteShader(self.shader)
-        self.shader = 0
+        do_when_gl_active(partial(gles2.glDeleteShader, self.shader))
 
 
 class VertexShader(Shader):
@@ -78,26 +110,38 @@ class FragmentShader(Shader):
 class Uniform(object):
     """An OpenGL uniform variable."""
 
-    __slots__ = ["program", "name", "uniform"]
+    __slots__ = ["program", "name", "uniform", "_todo", "_value"]
 
-    def __init__(self, program, name):
+    def __init__(self, program, todo, name):
         """Create a uniform given a program and the name."""
         self.program = program
         self.name = name
         self.uniform = gles2.glGetUniformLocation(program, name.encode())
+        self._todo = todo
+        self._value = None
 
-    def load(self, ar):
-        """Load data into the uniform. Its program must be in use."""
-        assert _used_program == self.program
-        load_uniform(self.uniform, ar)
+    def is_program_used(self):
+        return _gl_active and _used_program is not None and _used_program.program == self.program
 
-    def load_int(self, n):
-        """Load a single integer into the uniform. Its program must be in use."""
-        assert _used_program == self.program
-        gles2.glUniform1i(self.uniform, n)
+    @property
+    def value(self):
+        """Get or set the uniform's value. 
+        """
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        if self.is_program_used():
+            load_uniform(self.uniform, value)
+        else:
+            self._todo[self.uniform] = partial(load_uniform, self.uniform, value)
+        self._value = value
 
     def __repr__(self):
         return "Uniform(%d, %s)" % (self.program, repr(self.name))
+
+# Global variables to track which program is in use
+_used_program = None
 
 
 class Attrib(object):
@@ -112,15 +156,13 @@ class Attrib(object):
         self.location = gles2.glGetAttribLocation(program, name.encode())
         self.enabled = False
 
-    def enable(self):
+    def _enable(self):
         """Enable the attrib. Its program must be in use."""
-        assert _used_program == self.program
         gles2.glEnableVertexAttribArray(self.location)
         self.enabled = True
 
-    def disable(self):
+    def _disable(self):
         """Disable the attrib. Its program must be in use."""
-        assert _used_program == self.program
         gles2.glDisableVertexAttribArray(self.location)
         self.enabled = False
 
@@ -128,43 +170,58 @@ class Attrib(object):
         return "Attrib(%d, %s)" % (self.program, repr(self.name))
 
 
-_used_program = None
-
 class Program(object):
     """An OpenGL shader program."""
 
-    __slots__ = ["program", "uniform", "attrib"]
+    __slots__ = ["program", "uniform", "_todo", "attrib", "_enabled_array_spec", "_attached_array_buffer"]
 
     def __init__(self, *shaders):
         """Link shaders together into a single program."""
         program = create_program(*[shader.shader for shader in shaders])
         self.program = program
-        self.uniform = LazyAttr(partial(Uniform, program))
+        self._todo = {}
+        self.uniform = LazyAttr(partial(Uniform, program, self._todo))
         self.attrib = LazyAttr(partial(Attrib, program))
+        self._enabled_array_spec = None
+        self._attached_array_buffer = None
 
     def use(self):
         """Start using this program."""
         global _used_program
+
+        if self.is_used(): 
+            return
+        if _used_program is not None:
+            _used_program._unuse()
+
         gles2.glUseProgram(self.program)
-        _used_program = self.program
+        _used_program = self
+
+        for action in self._todo.values():
+            action()
+        self._todo.clear()
 
     def is_used(self):
         """Check if program is currently in use."""
-        return _used_program == self.program
+        return _used_program == self
 
-    def delete(self):
+    def _unuse(self):
+        self._disable_all_attribs()
+        self._attached_array_buffer = None
+
+    def __del__(self):
         """Delete program."""
-        gles2.glDeleteProgram(self.program)
-        self.program = 0
+        do_when_gl_active(partial(gles2.glDeleteProgram, self.program))
 
     def enabled_attribs(self):
         """Return a list of all enabled attribs."""
         return [attrib for attrib in self.attrib if attrib.enabled]
 
-    def disable_all_attribs(self):
+    def _disable_all_attribs(self):
         """Disable all enabled attribs."""
         for attrib in self.enabled_attribs():
-            attrib.disable()
+            attrib._disable()
+        self._enabled_array_spec = None
 
 
 class AttribSpec(object):
@@ -180,6 +237,8 @@ class AttribSpec(object):
       'f' : gles2.GL_FLOAT,
       'd' : gles2.GL_DOUBLE
     }
+
+    glsl_types = (None, "float", "vec2", "vec3", "vec4")
 
     regex = re.compile(r"^(.+):([1-4])([bBhHlLfd])([n]*)$")
 
@@ -200,7 +259,7 @@ class AttribSpec(object):
             color:4Bn
         """
         self.spec = spec
-        names,count, type, flags = self.regex.match(spec).groups()
+        names, count, type, flags = self.regex.match(spec).groups()
 
         self.names = names.split(",")
         self.count = int(count)
@@ -221,19 +280,42 @@ class AttribSpec(object):
         return [getattr(program_attrib, name).location for name in self.names]
 
     def prep_array(self, ar):
+        """Convert ar to an array of the correct type and check its shape."""
         ar = numpy.ascontiguousarray(ar, dtype=self.dtype)
         if ar.shape[1:] not in self.allowed_shapes:
             raise ValueError("Invalid array shape: %s" % ar.shape)
         return ar
 
     def load_array(self, prepped_array, length, offset):
+        """Load an array into the currently bound array buffer. The array must already be prepped."""
         array_length = min(length - offset, len(prepped_array))
         byte_offset = length * self.offset + offset * self.itemsize
         gles2.glBufferSubData(gles2.GL_ARRAY_BUFFER, byte_offset, array_length * self.itemsize, prepped_array.ctypes.data)
 
+    def glsl(self):
+        """Create a piece of GLSL code which declares the attribute(s) described by this spec.
+        This can be prepended to your vertex shader code.
+        """
+        glsl_type = self.glsl_types[self.count]
+        return "".join("attribute %s %s;\n" % (glsl_type, name) for name in self.names)
+
+
     def __repr__(self):
         return "AttribSpec(%s)" % repr(self.spec)
         
+
+class Drawing:
+    """Encapsulates a complete draw() action."""
+
+    def __init__(self, array_buffer, element_buffer, mode):
+        self.array_buffer = array_buffer
+        self.element_buffer = element_buffer
+        self.mode = mode
+
+    def draw(self, mode=None, first=0, count=None):
+        if mode is None:
+            mode = self.mode
+        self.array_buffer.draw(mode=mode, elements=self.element_buffer, first=first, count=count)
 
 
 class ArraySpec(object):
@@ -255,11 +337,58 @@ class ArraySpec(object):
                 attrib_dict[name] = attrib
 
         self.attrib_dict = attrib_dict
+        self.attrib_names = tuple(attrib_dict.keys())
         self.size = size
 
-    def create_buffer(self, length):
+    def create_buffer(self, length=None, usage=gles2.GL_STATIC_DRAW, **kws):
         """Create an ArrayBuffer of the given length."""
-        return ArrayBuffer(self, length)
+        attrib_data = []
+        for attrib_name in kws:
+            attrib = self.attrib_dict[attrib_name]
+            ar = attrib.prep_array(kws[attrib_name])
+            if length is None:
+                length = len(ar)
+            else:
+                assert length == len(ar)
+            attrib_data.append((attrib, ar))
+
+        assert length is not None
+        array_buffer = ArrayBuffer(self, length)
+        for (attrib, ar) in attrib_data:
+            attrib.load_array(ar, length, 0)
+        return array_buffer
+
+
+    def draw(self, mode=gles2.GL_TRIANGLES, elements=None, **kws):
+        """Draw directly using this array spec.
+        This creates a temporary array buffer object which is immediately deleted.
+        """
+        array_buffer = self.create_buffer(usage=gles2.GL_STREAM_DRAW, **kws)
+        array_buffer.draw(mode=mode, elements=elements)
+
+    def make_drawing(self, mode=gles2.GL_TRIANGLES, elements=None, **kws):
+        """Like draw, but rather than drawing directy,
+        creates a Drawing object whose draw() method can be used to draw repeatedly.
+        """
+        array_buffer = self.create_buffer(**kws)
+        if elements is not None:
+            elements = _as_element_buffer(elements, gles2.GL_STATIC_DRAW)
+        return Drawing(array_buffer, elements, mode)
+
+    def glsl(self):
+        """Create a piece of GLSL code which declares the attribute(s) described by this spec.
+        This can be prepended to your vertex shader code.
+        """
+        return "".join(attrib.glsl() for attrib in self.attribs)
+
+    def _enable_attribs(self, program):
+        """Enable all attributes in the array spec in the given program."""
+        if program._enabled_array_spec == self:
+            return
+        program._disable_all_attribs()
+        for attrib_name in self.attrib_names:
+            getattr(program.attrib, attrib_name)._enable()
+        program._enabled_array_spec = self
 
     def __repr__(self):
         return "ArraySpec(%s)" % repr(self.spec)
@@ -279,51 +408,31 @@ class BufferObject(object):
 
     def bind(self):
         """Bind the buffer object."""
-        gles2.glBindBuffer(self.target, self.vbo)
-        self.bound_buffers[self.target] = self.vbo
+        if not self.is_bound():
+            gles2.glBindBuffer(self.target, self.vbo)
+            self.bound_buffers[self.target] = self.vbo
 
     def is_bound(self):
         return self.bound_buffers.get(self.target, None) == self.vbo
 
-    def delete(self):
+    def __del__(self):
         """Delete the buffer object."""
-        gles2.glDeleteBuffers(1, ctypes.byref(self.vbo))
-        self.vbo.value = 0
+        do_when_gl_active(partial(gles2.glDeleteBuffers, 1, ctypes.byref(self.vbo)))
 
     def buffer_data(self, size, ptr=None):
-        assert self.is_bound()
+        self.bind()
         gles2.glBufferData(self.target, size, ptr, self.usage)
         self.byte_size = size
 
     def __len__(self):
         return self.length
 
-    def __getitem__(self, item):
-        """item should be a slice"""
-        start, stop, step = item.indices(self.length)
-        assert step == 1
-        return SlicedBuffer(self, start, stop)
 
-
-class SlicedBuffer(object):
-    __slots__ = ["buffer_object", "start", "stop"]
-
-    def __init__(self, buffer_object, start, stop):
-        self.buffer_object = buffer_object
-        self.start = start
-        self.stop = stop
-
-    def draw(self, mode=gles2.GL_TRIANGLES):
-        self.buffer_object.draw(mode, self.start, self.stop - self.start)
-
-    def __len__(self):
-        return self.stop - self.start
-
-    def __getitem__(self, item):
-        """item should be a slice"""
-        start, stop, step = item.indices(self.stop - self.start)
-        assert step == 1
-        return SlicedBuffer(self.buffer_object, self.start + start, self.start + stop)
+def _as_element_buffer(elements, usage):
+    if isinstance(elements, ElementBuffer):
+        return elements
+    else:
+        return ElementBuffer(elements, usage=usage)
 
 
 class ArrayBuffer(BufferObject):
@@ -337,27 +446,54 @@ class ArrayBuffer(BufferObject):
             spec = ArraySpec(spec)
         self.spec = spec
         self.length = length
+        self.signature = (spec, length)
 
         self.bind()
         self.buffer_data(spec.size * length)
 
 
     def load(self, attrib, array, offset=0):
-        assert self.is_bound()
+        self.bind()
         attrib = self.spec.attrib_dict[attrib]
         array = attrib.prep_array(array)
         attrib.load_array(array, self.length, offset)
 
 
-    def draw(self, mode=gles2.GL_TRIANGLES, first=0, count=None):
-        assert self.is_bound()
-        if count is None:
-            count = self.length - first
-        gles2.glDrawArrays(mode, first, count)
+    def draw(self, mode=gles2.GL_TRIANGLES, first=0, count=None, elements=None):
+        """Draw to the screen, using this array buffer.
 
-    def attach(self, program):
-        assert self.is_bound()
-        assert program.is_used()
+        mode  -- The type of primitives to draw. GL_TRIANGLES by default.
+        first -- The first vertex entry with which we start drawing. Defaults to 0.
+        count -- The number of vertices to draw. Defaults to all vertices up to the end of the array.
+        elements -- If not None, a sequence or ElementBuffer which specified the indices to render.
+        
+        If elements is given, first and count refer to the element buffer, not to the array buffer.
+        """
+        self._activate()
+        if elements is None:
+            if count is None:
+                count = self.length - first
+            gles2.glDrawArrays(mode, first, count)
+        else:
+            elements = _as_element_buffer(elements, gles2.GL_STREAM_DRAW)
+            elements._draw(mode, first, count)
+
+
+    def make_drawing(self, mode=gles2.GL_TRIANGLES, elements=None):
+        """Like draw, but rather than drawing directy,
+        creates a Drawing object whose draw() method can be used to draw repeatedly.
+        """
+        if elements is not None:
+            elements = _as_element_buffer(elements, gles2.GL_STATIC_DRAW)
+        return Drawing(self, elements, mode)
+
+
+    def _attach(self, program):
+        if program._attached_array_buffer == self.signature:
+            return
+
+        self.spec._enable_attribs(program)
+
         length = self.length
         glVertexAttribPointer = gles2.glVertexAttribPointer
         for attrib_spec in self.spec.attribs:
@@ -367,7 +503,15 @@ class ArrayBuffer(BufferObject):
             byte_offset = length * attrib_spec.offset
             for location in attrib_spec.locations(program):
                 glVertexAttribPointer(location, count, gl_type, normalized, 0, byte_offset)
+
+        program._attached_array_buffer = self.signature
             
+    def _activate(self):
+        """Do everything (binding, attaching, enabling attributes) to make using this array buffer possible."""
+        assert _used_program is not None
+        self.bind()
+        self._attach(_used_program)
+
 
 class ElementBuffer(BufferObject):
     """An OpenGL element buffer object."""
@@ -384,13 +528,13 @@ class ElementBuffer(BufferObject):
             self.load(array)
 
     def load(self, array):
-        assert self.is_bound()
+        self.bind()
         array = numpy.ravel(numpy.ascontiguousarray(array, dtype=self.dtype))
         self.length = len(array)
         self.buffer_data(self.itemsize * self.length, array.ctypes.data)
 
-    def draw(self, mode=gles2.GL_TRIANGLES, first=0, count=None):
-        assert self.is_bound()
+    def _draw(self, mode=gles2.GL_TRIANGLES, first=0, count=None):
+        self.bind()
         if count is None:
             count = self.length - first
         gles2.glDrawElements(mode, count, self.gl_type, first * self.itemsize)
@@ -408,11 +552,14 @@ _uniform_loaders = {
 
 c_float_p = ctypes.POINTER(ctypes.c_float)
 
-def load_uniform(uniform, ar):
-    ar = numpy.asfortranarray(ar, dtype=numpy.float32)
-    loader = _uniform_loaders[ar.shape]
-    ptr = ar.ctypes.data_as(c_float_p)
-    loader(uniform, ptr)
+def load_uniform(uniform, value):
+    if isinstance(value, int):
+        gles2.glUniform1i(uniform, value)
+    else:
+        ar = numpy.asfortranarray(value, dtype=numpy.float32)
+        loader = _uniform_loaders[ar.shape]
+        ptr = ar.ctypes.data_as(c_float_p)
+        loader(uniform, ptr)
 
 def _get_array_from_alpha_surface(surface):
     rgb = pygame.surfarray.pixels3d(surface).astype(numpy.uint16)
@@ -476,7 +623,12 @@ class TextureData(object):
         """Create texture data from a file, either indicated by name or by file object."""
         return TextureData.from_surface(pygame.image.load(filename_or_obj))
 
+    @staticmethod
+    def from_color(rgb):
+        """Create 1x1 texture data from a triple RGB with values in range 0-255."""
+        return TextureData.from_ndarray([[rgb]])
 
+ 
 class CubeFormat(object):
     """Represents a way to lay out the 6 faces of the cube in a single image.
     Example format:
@@ -534,21 +686,40 @@ _repeats = {
 class Texture(object):
     """An OpenGL texture object."""
 
-    __slots__ = ["texture", "target"]
+    __slots__ = ["texture", "target", "sizes"]
+
+    _bound_textures = {}
+    _null_texture = ctypes.c_uint(0)
 
     def __init__(self):
         """Create a new texture with initially no texture data."""
         texture = ctypes.c_uint(0)
         gles2.glGenTextures(1, ctypes.byref(texture))
         self.texture = texture
+        self.sizes = ()
 
-    def bind(self):
+    def _bind(self, texture_unit, texture):
+        gles2.glActiveTexture(gles2.GL_TEXTURE0 + texture_unit)
+        gles2.glBindTexture(self.target, texture)
+        self._bound_textures[(texture_unit, self.target)] = texture
+
+    def bind(self, texture_unit=0):
         """Bind the texture."""
-        gles2.glBindTexture(self.target, self.texture)
+        self._bind(texture_unit, self.texture)
 
-    def delete(self):
+    @contextlib.contextmanager
+    def bound(self, texture_unit=0):
+        """Bind the texture, for use in a with-statement."""
+        old_texture = self._bound_textures.get((texture_unit, self.target), self._null_texture)
+        self._bind(texture_unit, self.texture)
+        try:
+            yield
+        finally:
+            self._bind(texture_unit, old_texture)
+
+    def __del__(self):
         """Delete the texture."""
-        gles2.glDeleteTextures(1, ctype.byref(self.texture))
+        do_when_gl_active(partial(gles2.glDeleteTextures, 1, ctypes.byref(ctypes.c_uint(self.texture.value))))
         self.texture.value = 0
 
     def load(self, texture_data, repeat="none", mipmap=True, cubemap=False, conversion=lambda x:x):
@@ -567,25 +738,28 @@ class Texture(object):
 
         assert len(targets) == len(texture_data)
 
-        self.bind()
+        with self.bound():
+            gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MIN_FILTER, gles2.GL_LINEAR_MIPMAP_LINEAR if mipmap_generation else gles2.GL_LINEAR)
+            gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MAG_FILTER, gles2.GL_LINEAR)
+            gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_S, repeat_s)
+            gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_T, repeat_t)
+            if cubemap and version.gl_version:
+                # Apparently this does not work on GLES?
+                gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_R, gles2.GL_CLAMP_TO_EDGE)
 
-        gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MIN_FILTER, gles2.GL_LINEAR_MIPMAP_LINEAR if mipmap_generation else gles2.GL_LINEAR)
-        gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_MAG_FILTER, gles2.GL_LINEAR)
-        gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_S, repeat_s)
-        gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_T, repeat_t)
-        if cubemap and version.gl_version:
-            # Apparently this does not work on GLES?
-            gles2.glTexParameteri(self.target, gles2.GL_TEXTURE_WRAP_R, gles2.GL_CLAMP_TO_EDGE)
+            if mipmap_generation == "GL_GENERATE_MIPMAP":
+                gles2.glTexParameteri(self.target, gles2.GL_GENERATE_MIPMAP, gles2.GL_TRUE)
 
-        if mipmap_generation == "GL_GENERATE_MIPMAP":
-            gles2.glTexParameteri(self.target, gles2.GL_GENERATE_MIPMAP, gles2.GL_TRUE)
+            sizes = []
+            for i in range(len(targets)):
+                data = conversion(texture_data[i])
+                gles2.glTexImage2D(targets[i], 0, data.format, data.width, data.height, 0, data.format, gles2.GL_UNSIGNED_BYTE, data.pointer)
+                sizes.append((data.width, data.height))
 
-        for i in range(len(targets)):
-            data = conversion(texture_data[i])
-            gles2.glTexImage2D(targets[i], 0, data.format, data.width, data.height, 0, data.format, gles2.GL_UNSIGNED_BYTE, data.pointer)
+            self.sizes = tuple(sizes)
 
-        if mipmap_generation == "glGenerateMipmap":
-            gles2.glGenerateMipmap(self.target)
+            if mipmap_generation == "glGenerateMipmap":
+                gles2.glGenerateMipmap(self.target)
 
 
     @classmethod
@@ -609,6 +783,11 @@ class Texture(object):
     def from_file(cls, filename_or_obj, **kws):
         """Create texture from a file, either indictaed by name or by file object."""
         return cls.from_data(filename_or_obj, conversion=TextureData.from_file, **kws)
+
+    @classmethod
+    def from_color(cls, rgb, **kws):
+        """Create texture from a Numpy ndarray."""
+        return cls.from_data(rgb, conversion=TextureData.from_color, **kws)
 
 
 class Version(object):
@@ -780,14 +959,16 @@ class GameWindow(EventHandler):
         else:
             self.on_event(pygame.event.wait())
 
+    def mainloop(self):
+        self.done = False
+        self.redraw()
+        self.clock.tick()
+        while not self.done:
+            self.do_one_event()
 
     def run(self):
         pygame.init()
-        self.done = False
         try:
-            self.redraw()
-            self.clock.tick()
-            while not self.done:
-                self.do_one_event()
+            invoke_with_gl_active(self.mainloop)
         finally:
             pygame.quit()

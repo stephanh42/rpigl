@@ -14,6 +14,9 @@ def glHint(target, mode):
 _glLineWidth = load_gl_proc(b"glLineWidth", None, (ctypes.c_float,))
 def glLineWidth(width):
     return _glLineWidth(width)
+_glPointSize = load_gl_proc(b"glPointSize", None, (ctypes.c_float,))
+def glPointSize(size):
+    return _glPointSize(size)
 _glScissor = load_gl_proc(b"glScissor", None, (ctypes.c_int, ctypes.c_int, ctypes.c_size_t, ctypes.c_size_t,))
 def glScissor(x, y, width, height):
     return _glScissor(x, y, width, height)
@@ -65,6 +68,9 @@ def glFlush():
 _glBlendFunc = load_gl_proc(b"glBlendFunc", None, (ctypes.c_uint, ctypes.c_uint,))
 def glBlendFunc(sfactor, dfactor):
     return _glBlendFunc(sfactor, dfactor)
+_glLogicOp = load_gl_proc(b"glLogicOp", None, (ctypes.c_uint,))
+def glLogicOp(opcode):
+    return _glLogicOp(opcode)
 _glStencilFunc = load_gl_proc(b"glStencilFunc", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
 def glStencilFunc(func, ref, mask):
     return _glStencilFunc(func, ref, mask)
@@ -113,6 +119,9 @@ def glDrawArrays(mode, first, count):
 _glDrawElements = load_gl_proc(b"glDrawElements", None, (ctypes.c_uint, ctypes.c_size_t, ctypes.c_uint, ctypes.c_void_p,))
 def glDrawElements(mode, count, type, indices):
     return _glDrawElements(mode, count, type, indices)
+_glGetPointerv = load_gl_proc(b"glGetPointerv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p),))
+def glGetPointerv(pname, params):
+    return _glGetPointerv(pname, params)
 _glPolygonOffset = load_gl_proc(b"glPolygonOffset", None, (ctypes.c_float, ctypes.c_float,))
 def glPolygonOffset(factor, units):
     return _glPolygonOffset(factor, units)
@@ -158,6 +167,12 @@ def glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, fo
 _glBlendFuncSeparate = load_gl_proc(b"glBlendFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
 def glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha):
     return _glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha)
+_glPointParameterf = load_gl_proc(b"glPointParameterf", None, (ctypes.c_uint, ctypes.c_float,))
+def glPointParameterf(pname, param):
+    return _glPointParameterf(pname, param)
+_glPointParameterfv = load_gl_proc(b"glPointParameterfv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+def glPointParameterfv(pname, params):
+    return _glPointParameterfv(pname, params)
 _glBindBuffer = load_gl_proc(b"glBindBuffer", None, (ctypes.c_uint, ctypes.c_uint32,))
 def glBindBuffer(target, buffer):
     return _glBindBuffer(target, buffer)

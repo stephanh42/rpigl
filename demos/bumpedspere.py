@@ -67,13 +67,11 @@ def refine(vertices, indices):
 for i in range(3):
     vertices, indices = refine(vertices, indices)
 
-vertex_glsl = """
+array_spec = glesutils.ArraySpec("vertex_attrib,normal_attrib,texcoord_attrib:3f")
+
+vertex_glsl = array_spec.glsl() + """
 uniform mat4 mvp_mat;
 uniform mat3 texcoord_mat;
-
-attribute vec3 vertex_attrib;
-attribute vec3 normal_attrib;
-attribute vec3 texcoord_attrib;
 
 varying vec3 normal_var;
 varying vec3 texcoord_var;
@@ -100,8 +98,6 @@ void main(void) {
 }
 """
 
-array_spec = glesutils.ArraySpec("vertex_attrib,normal_attrib,texcoord_attrib:3f")
-
 def normalize(v):
     v = numpy.asarray(v)
     return v / sqrt(numpy.sum(v*v))
@@ -117,9 +113,6 @@ class MyWindow(glesutils.GameWindow):
         program = glesutils.Program(vertex_shader, fragment_shader)
         self.program = program
 
-        vertex_shader.delete()
-        fragment_shader.delete()
-
         program.use()
 
         glClearDepthf(1.0)
@@ -130,24 +123,16 @@ class MyWindow(glesutils.GameWindow):
 
         glClearColor(1, 0, 0, 1)
 
-#        program.uniform.mvp_mat.load(transforms.rotation_degrees(45, "z"))
-        program.uniform.mvp_mat.load(transforms.identity)
-        program.uniform.light_dir.load(normalize((0, 1, -1)))
-        program.uniform.texture.load_int(0)
-        program.attrib.vertex_attrib.enable()
-        program.attrib.normal_attrib.enable()
-        program.attrib.texcoord_attrib.enable()
-        print(program.enabled_attribs())
+        program.uniform.mvp_mat.value = transforms.identity
+        program.uniform.light_dir.value = normalize((0, 1, -1))
+        program.uniform.texture.value = 0
 
-        vbo = array_spec.create_buffer(len(vertices))
-        vbo.load("vertex_attrib", vertices)
-        vbo.attach(program)
-        self.vbo = vbo
-
-        self.elem_vbo = glesutils.ElementBuffer(indices, type='H')
+        self.vbo = array_spec.create_buffer(vertex_attrib=vertices)
+        self.elem_vbo = glesutils.ElementBuffer(indices)
 
         img = pygame.image.load("cubenormal.png")
         self.texture = glesutils.Texture.from_surface(glesutils.split_cube_map(img), cubemap=True)
+        self.texture.bind(0)
  
         print(glGetString(GL_VENDOR))
         print(glGetString(GL_VERSION))
@@ -161,8 +146,8 @@ class MyWindow(glesutils.GameWindow):
 
     def draw(self):
         m = transforms.compose(transforms.rotation_degrees(self.angle, "y"), transforms.stretching(-1, 1, 1))
-        self.program.uniform.texcoord_mat.load(m[:3,:3])
-        self.elem_vbo[:].draw()
+        self.program.uniform.texcoord_mat.value = m[:3,:3]
+        self.vbo.draw(elements=self.elem_vbo)
 
 
 MyWindow(640, 640, pygame.RESIZABLE).run()

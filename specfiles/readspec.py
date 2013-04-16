@@ -120,7 +120,7 @@ def parse_type_map(f):
            type_map[mo.group(1)] = mo.group(2)
     return type_map
 
-type_map = parse_type_map(open("specfiles/gl.tm", "r"))
+type_map = parse_type_map(open("gl.tm", "r"))
 
 extension_re = re.compile("[A-Z][A-Z]+$")
 
@@ -209,7 +209,7 @@ def parse_gl_spec(gl_spec):
     return functions
 
 
-outfile = open("rpigl/gles2.py", "w")
+outfile = open("../rpigl/gles2.py", "w")
 
 gles2_header = """
 import ctypes
@@ -221,13 +221,13 @@ to_be_deleted = ["ctypes", "load_gl_proc"]
 
 outfile.write(gles2_header)
 
-gl_spec = open("specfiles/gl.spec.FIXED", "r")
+gl_spec = open("gl.spec.FIXED", "r")
 types = set()
 for f in parse_gl_spec(gl_spec):
     if f.valid and not f.deprecated and not f.extension and has_function(f.name):
         f.write_loading(outfile)
 
-for p in parse_enums(open("specfiles/enum.spec", "r")):
+for p in parse_enums(open("enum.spec", "r")):
      outfile.write("GL_%s = %s\n" % p)
 
 for name in to_be_deleted:
